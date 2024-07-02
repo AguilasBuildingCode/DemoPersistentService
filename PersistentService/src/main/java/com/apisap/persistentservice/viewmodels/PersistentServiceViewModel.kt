@@ -63,7 +63,7 @@ abstract class PersistentServiceViewModel<S : PersistentService> : ViewModel(),
                 activity,
                 S::class.java
             ).let {
-                activity.bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
+                activity.unbindService(persistentServiceConnection)
             }
         }
     }
