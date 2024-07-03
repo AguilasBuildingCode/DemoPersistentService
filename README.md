@@ -48,7 +48,8 @@ This new service only provide the necessary to make it persistent, only override
 
 ### Activity who extend of [PersistentServiceActivity](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/activities/PersistentServiceActivity.kt) (see a [demo](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/app/src/main/java/com/apisap/demopersistentservice/DemoPersistentServiceActivity.kt))
 This Activity provide ViewModel to bind UI with logic, define the cycles when your service bind or unbind (__*onStart*__ and __*onStop*__ 
-or ~~__*onCreate*__~~ and ~~__*onDestroy*__~~, __*last one aren't recommended*__), also this activity request the necessary permissions automatically.
+or ~~__*onCreate*__~~ and ~~__*onDestroy*__~~, __*last ones aren't recommended*__), also this activity request the necessary permissions 
+automatically.
 
 ### ViewModel who extend of [PersistentServiceViewModel](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/viewmodels/PersistentServiceViewModel.kt) (see a [demo](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/app/src/main/java/com/apisap/demopersistentservice/viewmodels/DemoPersistentServiceViewModel.kt)) and used by Activity who handle the persistent service.
 This ViewModel is the bridge to join UI with your logic (there are service logic to handle start, stop, bind and unbind).
@@ -69,10 +70,19 @@ Always kills all application on the task manager, don't take care, your service 
 Android OS kills your service when it needs the memory to execute others services or applications in foreground, if your device 
 don't has applications you memory always are free.
 
+<img alt="Screenshot_04.jpg" src="assets/Screenshot_04.jpg" width="400" />
+<img alt="Screenshot_05.jpg" src="assets/Screenshot_05.jpg" width="400" />
+
 If you want to make an application for end users and you're looking for endless service, this library isn't for you. With regular
 use the service is killed by OS.
 
-![Screenshot_01.jpg](assets/Screenshot_01.jpg)
-![Screenshot_02.jpg](assets/Screenshot_02.jpg)
-![Screenshot_03.jpg](assets/Screenshot_03.jpg)
+# Demo
+<img alt="Screenshot_01.jpg" src="assets/Screenshot_01.jpg" width="260" />
+<img alt="Screenshot_02.jpg" src="assets/Screenshot_02.jpg" width="260" height="553.7"/>
+<img alt="Screenshot_03.jpg" src="assets/Screenshot_03.jpg" width="260"  />
 
+# Device ref
+Samsung Galaxy M13
+Model: SM-M135M/DS
+
+<img alt="Screenshot_06.jpg" src="assets/Screenshot_06.jpg" width="400" />
