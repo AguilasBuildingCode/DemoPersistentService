@@ -28,14 +28,14 @@ class DemoPersistentServiceViewModel : PersistentServiceViewModel<DemoPersistent
             PersistentServiceConnection<DemoPersistentService>() {
             override fun onPersistentServiceConnected(
                 name: ComponentName?,
-                persistentService: DemoPersistentService
+                persistentService: DemoPersistentService?
             ) {
-                persistentService.onNewLog { log ->
+                persistentService?.onNewLog { log ->
                     _demoPersistentServiceUiState.update { currentState ->
                         currentState.copy(log = log)
                     }
                 }
-                persistentService.onStoppedService {
+                persistentService?.onStoppedService {
                     _demoPersistentServiceUiState.update { currentState ->
                         currentState.copy(btnStartStopEnabled = false)
                     }

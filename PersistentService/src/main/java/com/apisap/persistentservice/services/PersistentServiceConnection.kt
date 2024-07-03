@@ -8,19 +8,15 @@ abstract class PersistentServiceConnection<S : PersistentService> : ServiceConne
 
     abstract fun onPersistentServiceConnected(
         name: ComponentName?,
-        persistentService: S
+        persistentService: S?
     )
 
     @Suppress("UNCHECKED_CAST")
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-        service?.let { safeBinder ->
-            val binder = safeBinder as PersistentServiceBinder<*>
-            (binder.persistentService as? S)?.let { safePersistentService ->
-                onPersistentServiceConnected(
-                    name,
-                    safePersistentService
-                )
-            }
-        }
+        val binder = service as? PersistentServiceBinder<*>
+        onPersistentServiceConnected(
+            name,
+            binder?.persistentService as? S
+        )
     }
 }

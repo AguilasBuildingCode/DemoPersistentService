@@ -25,7 +25,6 @@ abstract class PersistentServiceViewModel<S : PersistentService> : ViewModel(),
             }
             if (!PersistentService.isBound) {
                 activity.bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
-
             }
         }
     }
