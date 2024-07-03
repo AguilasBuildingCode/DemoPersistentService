@@ -47,7 +47,7 @@ with special use.
 This new service only provide the necessary to make it persistent, only override the required and add your own logic.
 
 ### Activity who extend of [PersistentServiceActivity](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/activities/PersistentServiceActivity.kt) (see a [demo](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/app/src/main/java/com/apisap/demopersistentservice/DemoPersistentServiceActivity.kt))
-This Activity provide ViewModel to bind UI with logic, define the cycles when your service bind or unbind (__*onStart*__ and __*onStop*__ 
+This Activity provide ViewModel to bind UI with logic, define when the lifecycles bind or unbind your service (__*onStart*__ and __*onStop*__ 
 or ~~__*onCreate*__~~ and ~~__*onDestroy*__~~, __*last ones aren't recommended*__), also this activity request the necessary permissions 
 automatically.
 

@@ -2,10 +2,14 @@ package com.apisap.persistentservice.activities
 
 import androidx.activity.ComponentActivity
 import com.apisap.persistentservice.permissions.PersistentServerPermissions
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 abstract class PersistentServiceActivity : ComponentActivity() {
 
-    private val persistentServerPermissions: PersistentServerPermissions by lazy { PersistentServerPermissions.getInstance() }
+    @Inject
+    lateinit var persistentServerPermissions: PersistentServerPermissions
 
     override fun onStart() {
         super.onStart()

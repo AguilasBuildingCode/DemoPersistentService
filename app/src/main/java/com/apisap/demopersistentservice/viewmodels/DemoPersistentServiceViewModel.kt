@@ -10,13 +10,17 @@ import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesE
 import com.apisap.persistentservice.services.PersistentService
 import com.apisap.persistentservice.services.PersistentServiceConnection
 import com.apisap.persistentservice.viewmodels.PersistentServiceViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class DemoPersistentServiceViewModel : PersistentServiceViewModel<DemoPersistentService>() {
+@HiltViewModel
+class DemoPersistentServiceViewModel @Inject constructor() :
+    PersistentServiceViewModel<DemoPersistentService>() {
 
     private val _demoPersistentServiceUiState: MutableStateFlow<DemoPersistentServiceUiState> =
         MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))

@@ -40,9 +40,12 @@ import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesE
 import com.apisap.demopersistentservice.ui.theme.DemoPersistentServiceTheme
 import com.apisap.demopersistentservice.viewmodels.DemoPersistentServiceViewModel
 import com.apisap.persistentservice.activities.PersistentServiceActivity
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class DemoPersistentServiceActivity : PersistentServiceActivity() {
 
     private val viewModel by viewModels<DemoPersistentServiceViewModel>()

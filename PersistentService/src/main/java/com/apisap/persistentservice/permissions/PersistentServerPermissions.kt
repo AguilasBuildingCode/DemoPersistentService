@@ -8,8 +8,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import javax.inject.Inject
+import javax.inject.Singleton
 
-open class PersistentServerPermissions : BasePermissions() {
+@Singleton
+open class PersistentServerPermissions @Inject constructor() : BasePermissions() {
     companion object {
         private val instance = PersistentServerPermissions()
 
