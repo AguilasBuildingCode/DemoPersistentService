@@ -1,13 +1,10 @@
 package com.apisap.demopersistentservice.services
 
 import android.app.Notification
-import android.app.PendingIntent
 import androidx.core.app.NotificationCompat
 import com.apisap.demopersistentservice.DemoPersistentServiceActivity
 import com.apisap.demopersistentservice.R
-import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.services.PersistentService
-import com.apisap.persistentservice.services.PersistentServiceActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class DemoPersistentService : PersistentService() {
 
+    private var counter = 0
     override val notificationId: Int = 1
     override val notificationChannelId: String by lazy { resources.getString(R.string.notification_channel_id) }
 
@@ -47,25 +45,15 @@ class DemoPersistentService : PersistentService() {
             .setContentText(
                 resources.getString(
                     R.string.notification_counter_text,
-                    0
+                    counter
                 )
             )
             .build()
     }
 
-    override fun getTurnOnPersistentServicePendingIntent(): PendingIntent {
-        val startIntent = PersistentServiceIntent(
-            this,
-            PersistentServiceActions.ON,
-            DemoPersistentService::class.java
-        )
-        return PendingIntent.getService(this, 0, startIntent, PendingIntent.FLAG_IMMUTABLE)
-    }
-
     override fun onCreate() {
         super.onCreate()
         job = scope.launch {
-            var counter = 0
             while (true) {
                 delay(5000)
                 counter++

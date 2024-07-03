@@ -10,7 +10,6 @@ import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesE
 import com.apisap.persistentservice.services.PersistentService
 import com.apisap.persistentservice.services.PersistentServiceConnection
 import com.apisap.persistentservice.viewmodels.PersistentServiceViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +17,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class DemoPersistentServiceViewModel : PersistentServiceViewModel<DemoPersistentService>() {
+
+    private val _demoPersistentServiceUiState: MutableStateFlow<DemoPersistentServiceUiState> =
+        MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
+    val demoPersistentServiceUiState: StateFlow<DemoPersistentServiceUiState> =
+        _demoPersistentServiceUiState.asStateFlow()
 
     override val persistentServiceConnection: PersistentServiceConnection<DemoPersistentService> =
         object :
@@ -52,17 +56,11 @@ class DemoPersistentServiceViewModel : PersistentServiceViewModel<DemoPersistent
 
         }
 
-    private val _demoPersistentServiceUiState: MutableStateFlow<DemoPersistentServiceUiState> =
-        MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
-    val demoPersistentServiceUiState: StateFlow<DemoPersistentServiceUiState> =
-        _demoPersistentServiceUiState.asStateFlow()
-
     fun onBtnStartStopClick(activity: Activity) {
         viewModelScope.launch {
             _demoPersistentServiceUiState.update { currentState ->
                 currentState.copy(btnStartStopEnabled = false)
             }
-            delay(1000)
             _demoPersistentServiceUiState.update { currentState ->
                 when (currentState.uiState) {
                     DemoPersistentServiceUiStatesEnum.START -> {

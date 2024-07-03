@@ -2,7 +2,6 @@ package com.apisap.persistentservice.services
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.AlarmManager
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -12,7 +11,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.apisap.persistentservice.activities.PersistentServiceActivity
-import com.apisap.persistentservice.broadcastreceiver.PersistentServiceBroadcastReceiver
 import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus.Companion.arePermissionsOK
@@ -40,7 +38,6 @@ abstract class PersistentService : Service() {
     protected abstract val notificationId: Int
     protected abstract val notificationChannelId: String
     protected abstract fun getNotification(): Notification
-    protected abstract fun getTurnOnPersistentServicePendingIntent(): PendingIntent
 
     protected open fun baseNotificationBuilder(): NotificationCompat.Builder {
         return NotificationCompat.Builder(this, notificationChannelId)
@@ -125,7 +122,7 @@ abstract class PersistentService : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         for ((permission, status) in persistentServerPermissions.checkPermissionsStatus(this).entries) {
             when (permission) {
                 Manifest.permission.POST_NOTIFICATIONS -> {
@@ -141,9 +138,11 @@ abstract class PersistentService : Service() {
                 }
             }
         }
-        when (intent.action) {
-            PersistentServiceActions.ON.name -> startPersistentService()
-            PersistentServiceActions.OFF.name -> stopPersistentService()
+        if (intent != null) {
+            when (intent.action) {
+                PersistentServiceActions.ON.name -> startPersistentService()
+                PersistentServiceActions.OFF.name -> stopPersistentService()
+            }
         }
         return START_STICKY
     }
@@ -171,31 +170,9 @@ abstract class PersistentService : Service() {
         return true
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-        if (!(isServiceForeground && isServicePersistenceOn)) {
-            return
-        }
-
-        (getSystemService(ALARM_SERVICE) as AlarmManager).setRepeating(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis(),
-            300000L,
-            getTurnOnPersistentServicePendingIntent()
-        )
-    }
-
     override fun onDestroy() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
         isServiceRunning = false
-        if (isServicePersistenceOn) {
-            sendBroadcast(
-                Intent(
-                    this,
-                    PersistentServiceBroadcastReceiver::class.java
-                )
-            )
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stoppedServiceCallback?.let { it() }
         stoppedServiceCallback = null
         super.onDestroy()

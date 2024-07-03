@@ -34,10 +34,6 @@
             android:name=".services.DemoPersistentService"
             android:foregroundServiceType="specialUse"
             android:stopWithTask="false" />
-        <receiver
-            android:name="com.apisap.persistentservice.broadcastreceiver.PersistentServiceBroadcastReceiver"
-            android:enabled="true"
-            android:exported="false" />
     </application>
 
 </manifest>

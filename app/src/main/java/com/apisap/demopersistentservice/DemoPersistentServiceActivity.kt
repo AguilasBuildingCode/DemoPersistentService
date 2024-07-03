@@ -46,7 +46,6 @@ import kotlinx.coroutines.launch
 class DemoPersistentServiceActivity : PersistentServiceActivity() {
 
     private val viewModel by viewModels<DemoPersistentServiceViewModel>()
-    override val uniquePersistentServiceWorkName: String by lazy { resources.getString(R.string.unique_persistent_service_worker_name) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
