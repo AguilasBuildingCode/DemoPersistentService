@@ -31,7 +31,7 @@ abstract class PersistentService : Service() {
     lateinit var persistentServerPermissions: PersistentServerPermissions
 
     private var stoppedServiceCallback: (() -> Unit)? = null
-    private lateinit var binder: PersistentServiceBinder<PersistentService>
+    private var binder: PersistentServiceBinder<PersistentService>? = null
 
     private var postNotificationPermissionRequestStatus: BasePermissions.RequestStatus =
         BasePermissions.RequestStatus.UNKNOWN
@@ -48,6 +48,7 @@ abstract class PersistentService : Service() {
         return NotificationCompat.Builder(this, notificationChannelId)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(false)
+            .setOngoing(true)
             .setSilent(true)
     }
 
@@ -69,7 +70,6 @@ abstract class PersistentService : Service() {
 
     @SuppressLint("NewApi")
     open fun startPersistentService() {
-        isServiceRunning = true
         isServiceForeground = true
         isServicePersistenceOn = true
         if (arePermissionsOK(
@@ -110,10 +110,10 @@ abstract class PersistentService : Service() {
     }
 
     open fun stopPersistentService() {
-        isServicePersistenceOn = false
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
         isServiceRunning = false
+        isServicePersistenceOn = false
+        stopSelf()
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stoppedServiceCallback?.let { it() }
         stoppedServiceCallback = null
     }
@@ -128,6 +128,7 @@ abstract class PersistentService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isServiceRunning = true
         for ((permission, status) in persistentServerPermissions.checkPermissionsStatus(this).entries) {
             when (permission) {
                 Manifest.permission.POST_NOTIFICATIONS -> {
@@ -157,7 +158,7 @@ abstract class PersistentService : Service() {
         binder = PersistentServiceBinder(this)
     }
 
-    override fun onBind(intent: Intent): IBinder {
+    override fun onBind(intent: Intent): IBinder? {
         isBound = true
         return binder
     }
@@ -170,8 +171,9 @@ abstract class PersistentService : Service() {
     override fun onUnbind(intent: Intent?): Boolean {
         isBound = false
         if (!isServiceForeground) {
-            stopSelf()
+            stopPersistentService()
         }
+        stoppedServiceCallback = null
         return true
     }
 
@@ -180,6 +182,7 @@ abstract class PersistentService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
         stoppedServiceCallback?.let { it() }
         stoppedServiceCallback = null
+        binder = null
         super.onDestroy()
     }
 }

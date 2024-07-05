@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,7 +45,6 @@ import com.apisap.persistentservice.activities.PersistentServiceActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class DemoPersistentServiceActivity : PersistentServiceActivity() {
@@ -56,12 +57,20 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
         enableEdgeToEdge()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.demoPersistentServiceUiState.collectLatest { (uiStatus, btnEnabled, log) ->
+                viewModel.demoPersistentServiceUiState.collectLatest { (uiStatus, showPostNotificationExplainUserDialog, demoPersistentServicePostNotificationDialogState, btnEnabled, log) ->
                     setContent {
                         DemoPersistentServiceTheme {
                             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                                 Modifier.padding(innerPadding).Greeting(
-                                    uiStatus = uiStatus, btnEnabled = btnEnabled, log = log
+                                    uiStatus = uiStatus,
+                                    btnEnabled = btnEnabled,
+                                    log = log
+                                )
+                            }
+                            if (showPostNotificationExplainUserDialog && demoPersistentServicePostNotificationDialogState != null) {
+                                ExplainPostNotificationDialog(
+                                    demoPersistentServicePostNotificationDialogState.onConfirmation,
+                                    demoPersistentServicePostNotificationDialogState.onDismissRequest
                                 )
                             }
                         }
@@ -69,11 +78,13 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
                 }
             }
         }
+        persistentServerPermissions.setRequireUserExplanationCallback(viewModel.getRequireUserExplanationCallback())
     }
 
     override fun onStart() {
         super.onStart()
         viewModel.bindDemoPersistentService(this)
+        persistentServerPermissions.requestPermissions(this)
     }
 
     override fun onStop() {
@@ -138,6 +149,42 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
                 }
             }
         }
+    }
+
+    @Composable
+    fun ExplainPostNotificationDialog(
+        onConfirmation: () -> Unit,
+        onDismissRequest: () -> Unit,
+    ) {
+        AlertDialog(
+            title = {
+                Text(text = getString(R.string.post_notification_permission_explain_title_user))
+            },
+            text = {
+                Text(text = getString(R.string.post_notification_permission_explain_text_user))
+            },
+            onDismissRequest = {
+                onDismissRequest()
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onConfirmation()
+                    }
+                ) {
+                    Text(getString(R.string.text_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onDismissRequest()
+                    }
+                ) {
+                    Text(getString(R.string.text_dismiss))
+                }
+            }
+        )
     }
 
     @Preview(showBackground = true)

@@ -9,16 +9,20 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 open class PersistentServerPermissions @Inject constructor() : BasePermissions() {
-    companion object {
-        private val instance = PersistentServerPermissions()
 
-        fun getInstance(): PersistentServerPermissions {
-            return instance
-        }
+    private var onRequireUserExplanationCallback: ((permission: String, continueRequest: () -> Unit) -> Unit)? =
+        null
+    private var onPermissionsChangedStatusCallback: ((permission: String, newRequestStatus: RequestStatus) -> Unit)? =
+        null
+
+    fun setRequireUserExplanationCallback(onRequireUserExplanationCallback: (permission: String, continueRequest: () -> Unit) -> Unit) {
+        this.onRequireUserExplanationCallback = onRequireUserExplanationCallback
+    }
+
+    fun setPermissionsChangedStatusCallback(onPermissionsChangedStatusCallback: (permission: String, newRequestStatus: RequestStatus) -> Unit) {
+        this.onPermissionsChangedStatusCallback = onPermissionsChangedStatusCallback
     }
 
     @SuppressLint("InlinedApi")
@@ -61,43 +65,48 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
         if (this.requestCode != requestCode) {
             return
         }
-        permissions.forEachIndexed { i, s ->
+        permissions.forEachIndexed { index, permission ->
             val requestStatus =
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) RequestStatus.GRANTED else RequestStatus.DENIED
+                if (grantResults[index] == PackageManager.PERMISSION_GRANTED) RequestStatus.GRANTED else RequestStatus.DENIED
 
-            currentPermissions[s]?.permissionStatus = PermissionStatus.REQUESTED
-            currentPermissions[s]?.requestStatus = requestStatus
+            currentPermissions[permission]?.permissionStatus = PermissionStatus.REQUESTED
+            currentPermissions[permission]?.requestStatus = requestStatus
+
+            onPermissionsChangedStatusCallback?.let { it(permission, requestStatus) }
         }
     }
 
     fun requestPermissions(activity: Activity) {
         val permissionsPending = mutableListOf<String>()
-        currentPermissions.entries.forEachIndexed { index, (key, value) ->
-            if (value.permissionStatus != PermissionStatus.PENDING) {
+        currentPermissions.entries.forEachIndexed { index, (permission, permissionPayload) ->
+            if (permissionPayload.permissionStatus != PermissionStatus.PENDING) {
                 return
             }
             when {
                 ContextCompat.checkSelfPermission(
                     activity,
-                    key
+                    permission
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    value.permissionStatus = PermissionStatus.REQUESTED
-                    value.requestStatus = RequestStatus.GRANTED
+                    permissionPayload.permissionStatus = PermissionStatus.REQUESTED
+                    permissionPayload.requestStatus = RequestStatus.GRANTED
                 }
 
                 ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity, key
+                    activity, permission
                 ) -> {
-                    value.permissionStatus = PermissionStatus.REQUESTED
-                    value.requestStatus = RequestStatus.NEVER
+                    onRequireUserExplanationCallback?.let {
+                        it(permission) {
+                            activity.requestPermissions(arrayOf(permission), requestCode)
+                        }
+                    }
                 }
 
                 else -> {
-                    if (Build.VERSION.SDK_INT >= value.minimumAPILevel) {
-                        permissionsPending.add(key)
+                    if (Build.VERSION.SDK_INT >= permissionPayload.minimumAPILevel) {
+                        permissionsPending.add(permission)
                     } else {
-                        value.permissionStatus = PermissionStatus.REQUESTED
-                        value.requestStatus = value.unsupportedPermission
+                        permissionPayload.permissionStatus = PermissionStatus.REQUESTED
+                        permissionPayload.requestStatus = permissionPayload.unsupportedPermission
                     }
                 }
             }

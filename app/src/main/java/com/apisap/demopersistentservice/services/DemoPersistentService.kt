@@ -1,6 +1,7 @@
 package com.apisap.demopersistentservice.services
 
 import android.app.Notification
+import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.apisap.demopersistentservice.DemoPersistentServiceActivity
 import com.apisap.demopersistentservice.R
@@ -69,6 +70,11 @@ class DemoPersistentService : PersistentService() {
                 )
             }
         }
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        logsCallback = null
+        return super.onUnbind(intent)
     }
 
     override fun stopPersistentService() {
