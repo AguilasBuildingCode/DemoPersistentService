@@ -148,12 +148,10 @@ abstract class PersistentService : Service() {
                 }
             }
         }
-        if (intent != null) {
-            when (intent.action) {
-                PersistentServiceActions.ON_FOREGROUND.name -> startPersistentService()
-                PersistentServiceActions.ON.name -> stopForeground()
-                PersistentServiceActions.OFF.name -> stopPersistentService()
-            }
+        when (intent?.action) {
+            PersistentServiceActions.ON.name -> stopForeground()
+            PersistentServiceActions.OFF.name -> stopPersistentService()
+            else -> startPersistentService()
         }
         return START_STICKY
     }
