@@ -68,7 +68,7 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
                                 )
                             }
                             if (showPostNotificationExplainUserDialog && demoPersistentServicePostNotificationDialogState != null) {
-                                ExplainPostNotificationDialog(
+                                ExplainPostNotificationPermissionDialog(
                                     demoPersistentServicePostNotificationDialogState.onConfirmation,
                                     demoPersistentServicePostNotificationDialogState.onDismissRequest
                                 )
@@ -83,13 +83,13 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
 
     override fun onStart() {
         super.onStart()
-        viewModel.bindDemoPersistentService(this)
+        viewModel.bindOnStart(this)
         persistentServerPermissions.requestPermissions(this)
     }
 
     override fun onStop() {
         super.onStop()
-        viewModel.unBindDemoPersistentService(this)
+        viewModel.bindOnStop(this)
     }
 
     @Composable
@@ -152,7 +152,7 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
     }
 
     @Composable
-    fun ExplainPostNotificationDialog(
+    fun ExplainPostNotificationPermissionDialog(
         onConfirmation: () -> Unit,
         onDismissRequest: () -> Unit,
     ) {

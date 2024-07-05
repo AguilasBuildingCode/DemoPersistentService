@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 class DemoPersistentService : PersistentService() {
 
     private var counter = 0
+    private lateinit var log: String
     override val notificationId: Int = 1
     override val notificationChannelId: String by lazy { resources.getString(R.string.notification_channel_id) }
 
@@ -54,11 +55,15 @@ class DemoPersistentService : PersistentService() {
 
     override fun onCreate() {
         super.onCreate()
+        log = resources.getString(
+            R.string.notification_counter_text,
+            counter
+        )
         job = scope.launch {
             while (true) {
                 delay(5000)
                 counter++
-                val log = resources.getString(
+                log = resources.getString(
                     R.string.notification_counter_text,
                     counter
                 )
@@ -74,6 +79,11 @@ class DemoPersistentService : PersistentService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         logsCallback = null
+        updateNotification(
+            baseNotificationBuilder()
+                .setContentText(log)
+                .build()
+        )
         return super.onUnbind(intent)
     }
 

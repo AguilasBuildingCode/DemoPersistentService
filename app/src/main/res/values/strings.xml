@@ -12,5 +12,5 @@
     <string name="notification_channel_description">It\'s used by DemoPersistentService</string>
     <string name="notification_counter_text">Counter: %1$d</string>
     <string name="post_notification_permission_explain_title_user">Post Notification Permission</string>
-    <string name="post_notification_permission_explain_text_user">This permission is required to run foreground service, if it\'s not granted, the service stop when you left the application</string>
+    <string name="post_notification_permission_explain_text_user">This permission is required to run foreground service, if it\'s not granted, the service stop when you left the application, would you like request permissions again?</string>
 </resources>

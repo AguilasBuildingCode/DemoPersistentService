@@ -14,18 +14,23 @@ abstract class PersistentServiceViewModel<S : PersistentService> : ViewModel(),
     DefaultLifecycleObserver {
     protected abstract val persistentServiceConnection: PersistentServiceConnection<S>
 
+    protected inline fun <reified S : PersistentService> startPersistentServiceForeground(activity: Activity) {
+        PersistentServiceIntent(
+            activity,
+            PersistentServiceActions.ON_FOREGROUND,
+            S::class.java
+        ).let {
+            activity.startService(it)
+        }
+    }
+
     protected inline fun <reified S : PersistentService> startPersistentService(activity: Activity) {
         PersistentServiceIntent(
             activity,
             PersistentServiceActions.ON,
             S::class.java
         ).let {
-            if (!PersistentService.isServiceRunning) {
-                activity.startService(it)
-            }
-            if (!PersistentService.isBound) {
-                activity.bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
-            }
+            activity.startService(it)
         }
     }
 
@@ -35,12 +40,7 @@ abstract class PersistentServiceViewModel<S : PersistentService> : ViewModel(),
             PersistentServiceActions.OFF,
             S::class.java
         ).let {
-            if (PersistentService.isServiceRunning) {
-                activity.startService(it)
-            }
-            if (PersistentService.isBound) {
-                activity.unbindService(persistentServiceConnection)
-            }
+            activity.startService(it)
         }
     }
 
@@ -64,6 +64,39 @@ abstract class PersistentServiceViewModel<S : PersistentService> : ViewModel(),
             ).let {
                 activity.unbindService(persistentServiceConnection)
             }
+        }
+    }
+
+    protected inline fun <reified S : PersistentService> startPersistentServiceForegroundAndUnbind(activity: Activity) {
+        PersistentServiceIntent(
+            activity,
+            PersistentServiceActions.ON_FOREGROUND,
+            S::class.java
+        ).let {
+            activity.startService(it)
+            activity.unbindService(persistentServiceConnection)
+        }
+    }
+
+    protected inline fun <reified S : PersistentService> startPersistentServiceAndBind(activity: Activity) {
+        PersistentServiceIntent(
+            activity,
+            PersistentServiceActions.ON,
+            S::class.java
+        ).let {
+            activity.startService(it)
+            activity.bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    protected inline fun <reified S : PersistentService> stopPersistentServiceAndUnbind(activity: Activity) {
+        PersistentServiceIntent(
+            activity,
+            PersistentServiceActions.OFF,
+            S::class.java
+        ).let {
+            activity.startService(it)
+            activity.unbindService(persistentServiceConnection)
         }
     }
 }

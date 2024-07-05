@@ -22,7 +22,7 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask"
-            android:taskAffinity=""
+            android:taskAffinity="com.apisap.demopersistentservice"
             android:theme="@style/Theme.DemoPersistentService">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

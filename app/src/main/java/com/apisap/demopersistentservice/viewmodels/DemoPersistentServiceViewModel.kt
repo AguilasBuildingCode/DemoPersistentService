@@ -3,16 +3,13 @@ package com.apisap.demopersistentservice.viewmodels
 import android.Manifest
 import android.app.Activity
 import android.content.ComponentName
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import android.util.Log
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.apisap.demopersistentservice.services.DemoPersistentService
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServicePostNotificationDialogState
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiState
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesEnum
-import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus
 import com.apisap.persistentservice.services.PersistentService
 import com.apisap.persistentservice.services.PersistentServiceConnection
 import com.apisap.persistentservice.viewmodels.PersistentServiceViewModel
@@ -32,6 +29,13 @@ class DemoPersistentServiceViewModel @Inject constructor() :
         MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
     val demoPersistentServiceUiState: StateFlow<DemoPersistentServiceUiState> =
         _demoPersistentServiceUiState.asStateFlow()
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        _demoPersistentServiceUiState.update { currentStatus ->
+            currentStatus.copy(uiState = if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START)
+        }
+    }
 
     private val dismissPostNotificationDialogState: () -> Unit = {
         _demoPersistentServiceUiState.update { currentState ->
@@ -103,7 +107,7 @@ class DemoPersistentServiceViewModel @Inject constructor() :
             _demoPersistentServiceUiState.update { currentState ->
                 when (currentState.uiState) {
                     DemoPersistentServiceUiStatesEnum.START -> {
-                        startPersistentService<DemoPersistentService>(activity)
+                        startPersistentServiceAndBind<DemoPersistentService>(activity)
                         currentState.copy(
                             uiState = DemoPersistentServiceUiStatesEnum.STOP,
                             btnStartStopEnabled = true,
@@ -112,7 +116,7 @@ class DemoPersistentServiceViewModel @Inject constructor() :
                     }
 
                     DemoPersistentServiceUiStatesEnum.STOP -> {
-                        stopPersistentService<DemoPersistentService>(activity)
+                        stopPersistentServiceAndUnbind<DemoPersistentService>(activity)
                         currentState
                     }
                 }
@@ -124,11 +128,16 @@ class DemoPersistentServiceViewModel @Inject constructor() :
         return onRequireUserExplanationCallback
     }
 
-    fun bindDemoPersistentService(activity: Activity) {
-        bindPersistentService<DemoPersistentService>(activity)
+
+    fun bindOnStart(activity: Activity) {
+        if (PersistentService.isServiceRunning) {
+            startPersistentServiceAndBind<DemoPersistentService>(activity)
+        }
     }
 
-    fun unBindDemoPersistentService(activity: Activity) {
-        unBindPersistentService<DemoPersistentService>(activity)
+    fun bindOnStop(activity: Activity) {
+        if (PersistentService.isServiceRunning) {
+            startPersistentServiceForegroundAndUnbind<DemoPersistentService>(activity)
+        }
     }
 }

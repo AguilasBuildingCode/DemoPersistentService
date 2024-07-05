@@ -24,7 +24,6 @@ abstract class PersistentService : Service() {
         var isBound: Boolean = false
         var isServiceRunning: Boolean = false
         var isServiceForeground: Boolean = false
-        var isServicePersistenceOn: Boolean = false
     }
 
     @Inject
@@ -71,7 +70,6 @@ abstract class PersistentService : Service() {
     @SuppressLint("NewApi")
     open fun startPersistentService() {
         isServiceForeground = true
-        isServicePersistenceOn = true
         if (arePermissionsOK(
                 listOf(
                     postNotificationPermissionRequestStatus,
@@ -102,24 +100,30 @@ abstract class PersistentService : Service() {
         }
 
         isServiceForeground = false
-        isServicePersistenceOn = false
     }
 
     open fun onStoppedService(stoppedServiceCallback: () -> Unit) {
         this.stoppedServiceCallback = stoppedServiceCallback
     }
 
+    open fun stopForeground() {
+        isServiceForeground = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
     open fun stopPersistentService() {
         isServiceRunning = false
-        isServicePersistenceOn = false
         stopSelf()
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopForeground()
         stoppedServiceCallback?.let { it() }
         stoppedServiceCallback = null
     }
 
     @SuppressLint("MissingPermission")
     protected fun updateNotification(notification: Notification) {
+        if (!isServiceForeground) {
+            return
+        }
         with(NotificationManagerCompat.from(this)) {
             notify(
                 notificationId, notification
@@ -146,7 +150,8 @@ abstract class PersistentService : Service() {
         }
         if (intent != null) {
             when (intent.action) {
-                PersistentServiceActions.ON.name -> startPersistentService()
+                PersistentServiceActions.ON_FOREGROUND.name -> startPersistentService()
+                PersistentServiceActions.ON.name -> stopForeground()
                 PersistentServiceActions.OFF.name -> stopPersistentService()
             }
         }
@@ -179,7 +184,7 @@ abstract class PersistentService : Service() {
 
     override fun onDestroy() {
         isServiceRunning = false
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopForeground()
         stoppedServiceCallback?.let { it() }
         stoppedServiceCallback = null
         binder = null
