@@ -11,7 +11,6 @@ open class BasePermissions {
     enum class RequestStatus {
         GRANTED,
         DENIED,
-        NEVER,
         NOT_REQUIRED,
         NOT_SUPPORTED,
         UNKNOWN;

@@ -52,14 +52,14 @@ abstract class PersistentServiceActivity<S : PersistentService, P : PersistentSe
     override fun onStart() {
         super.onStart()
         persistentServerPermissions.requestPermissions(this)
-        if (PersistentService.isServiceRunning) {
+        if (PersistentService.isRunning()) {
             startPersistentServiceAndBind()
         }
     }
 
     override fun onStop() {
         super.onStop()
-        if (PersistentService.isServiceRunning) {
+        if (PersistentService.isRunning()) {
             startPersistentServiceForegroundAndUnbind()
         }
     }

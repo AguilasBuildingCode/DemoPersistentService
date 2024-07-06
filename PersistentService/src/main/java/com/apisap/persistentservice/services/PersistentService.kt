@@ -16,11 +16,50 @@ import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus.Companion.arePermissionsOK
 import com.apisap.persistentservice.permissions.PersistentServerPermissions
 
+/**
+ * This [PersistentService] extend of [Service], it's made to handle foreground logic, only extend, and override
+ * necessary and now your service can be foreground service.
+ *
+ * It can be in three status:
+ *  * Start in foreground: with Intent action [PersistentServiceActions.ON_FOREGROUND]
+ *  * Start without foreground: with Intent action [PersistentServiceActions.ON]
+ *  * Stop (don't care if is running foreground or not): with Intent action [PersistentServiceActions.OFF]
+ *
+ * To run the service use [PersistentServiceIntent] or extend of [PersistentServiceActivity] into your activity
+ * to get the logic to handle the service.
+ *
+ * @property [isServiceBound] handle in the lifecycle to expose if this service is bound or not.
+ * @property [isServiceRunning] handle in the lifecycle to expose if this service is running or not.
+ * @property [isServiceForeground] handle in the lifecycle to expose if this service is in foreground mode or not.
+ * @property [persistentServerPermissions] this property is an instance of [PersistentServerPermissions], it allows
+ * get current permissions status.
+ * @property [stoppedServiceCallback] this property is a callback to notify when the service is stopped, you can set it with method [onStoppedService],
+ * to do it, bind your activity with the service, extend of [PersistentServiceActivity] into your Activity to handle it automatically.
+ * @property [binder] to permit bind service with your activity.
+ * @property [postNotificationPermissionRequestStatus] handle current post notification permission [Manifest.permission.POST_NOTIFICATIONS].
+ * @property [foregroundPermissionRequestStatus] handle current foreground permission [Manifest.permission.FOREGROUND_SERVICE].
+ * @property [foregroundSpecialUsePermissionRequestStatus] handle current foreground with special use permission [Manifest.permission.FOREGROUND_SERVICE_SPECIAL_USE].
+ * @property [notificationId] override this property to define your notification id.
+ * @property [notificationChannelId] override this property to define your notification channel id.
+ *
+ */
 abstract class PersistentService : Service() {
     companion object {
-        var isBound: Boolean = false
-        var isServiceRunning: Boolean = false
-        var isServiceForeground: Boolean = false
+        protected var isServiceBound: Boolean = false
+        protected var isServiceRunning: Boolean = false
+        protected var isServiceForeground: Boolean = false
+
+        fun isBound(): Boolean {
+            return isServiceBound
+        }
+
+        fun isRunning(): Boolean {
+            return isServiceRunning
+        }
+
+        fun isForeground(): Boolean {
+            return isServiceForeground
+        }
     }
 
     private val persistentServerPermissions: PersistentServerPermissions =
@@ -38,8 +77,24 @@ abstract class PersistentService : Service() {
 
     protected abstract val notificationId: Int
     protected abstract val notificationChannelId: String
+
+    /**
+     * Override this method [getNotification] to get first notification on foreground mode.
+     *
+     * @return [Notification]
+     */
     protected abstract fun getNotification(): Notification
 
+    /**
+     * Override this method [baseNotificationBuilder] to add your notification configuration, by default,
+     * it has:
+     *  * Priority: [NotificationCompat.PRIORITY_HIGH]
+     *  * AutoCancel: false
+     *  * Ongoing: true
+     *  * Silent: true
+     *
+     *  @return [NotificationCompat.Builder]
+     */
     protected open fun baseNotificationBuilder(): NotificationCompat.Builder {
         return NotificationCompat.Builder(this, notificationChannelId)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -48,11 +103,23 @@ abstract class PersistentService : Service() {
             .setSilent(true)
     }
 
+    /**
+     * This method [getPersistentServiceOffPendingIntent] create a [PendingIntent] to off this service, it's useful
+     * to add a 'Off' button into foreground notification. Pass your Service as type.
+     *
+     * @return [PendingIntent]
+     */
     protected inline fun <reified S : PersistentService> getPersistentServiceOffPendingIntent(): PendingIntent {
         val startIntent = PersistentServiceIntent(this, PersistentServiceActions.OFF, S::class.java)
         return PendingIntent.getService(this, 0, startIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
+    /**
+     * This method [getPersistentServiceActivityOpenPendingIntent] create a [PendingIntent] to open your Activity, usually, when the users
+     * click into notification content, it open an Activity.
+     *
+     * @return [PendingIntent]
+     */
     protected inline fun <reified A : PersistentServiceActivity<*, *>> getPersistentServiceActivityOpenPendingIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this,
@@ -64,8 +131,15 @@ abstract class PersistentService : Service() {
         )
     }
 
+    /**
+     * This method [startPersistentService] start service on foreground mode if is possible, to run service
+     * on foreground mode is necessary [Manifest.permission.POST_NOTIFICATIONS] permission and [Manifest.permission.FOREGROUND_SERVICE_SPECIAL_USE]
+     * or [Manifest.permission.FOREGROUND_SERVICE] permission. If they're not granted, the service run without foreground mode.
+     *
+     * @return [Unit]
+     */
     @SuppressLint("NewApi")
-    open fun startPersistentService() {
+    protected open fun startPersistentService() {
         isServiceForeground = true
         if (arePermissionsOK(
                 listOf(
@@ -103,12 +177,22 @@ abstract class PersistentService : Service() {
         this.stoppedServiceCallback = stoppedServiceCallback
     }
 
-    open fun stopForeground() {
+    /**
+     * This method [stopForeground] stop foreground mode, it's mean that service can be running if it's required.
+     *
+     * @return [Unit]
+     */
+    protected open fun stopForeground() {
         isServiceForeground = false
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
-    open fun stopPersistentService() {
+    /**
+     * This method [stopPersistentService] stop foreground mode and stop the service.
+     *
+     * @return [Unit]
+     */
+    protected open fun stopPersistentService() {
         isServiceRunning = false
         stopSelf()
         stopForeground()
@@ -116,9 +200,14 @@ abstract class PersistentService : Service() {
         stoppedServiceCallback = null
     }
 
+    /**
+     * This method [updateNotification]
+     *
+     * @param [notification][Notification]
+     */
     @SuppressLint("MissingPermission")
     protected fun updateNotification(notification: Notification) {
-        if (!isServiceForeground) {
+        if (!isForeground()) {
             return
         }
         with(NotificationManagerCompat.from(this)) {
@@ -159,18 +248,18 @@ abstract class PersistentService : Service() {
     }
 
     override fun onBind(intent: Intent): IBinder? {
-        isBound = true
+        isServiceBound = true
         return binder
     }
 
     override fun onRebind(intent: Intent?) {
         super.onRebind(intent)
-        isBound = true
+        isServiceBound = true
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        isBound = false
-        if (!isServiceForeground) {
+        isServiceBound = false
+        if (!isForeground()) {
             stopPersistentService()
         }
         stoppedServiceCallback = null

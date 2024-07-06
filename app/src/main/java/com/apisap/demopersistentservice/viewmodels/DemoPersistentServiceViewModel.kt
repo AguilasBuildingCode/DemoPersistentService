@@ -22,7 +22,7 @@ import javax.inject.Inject
 class DemoPersistentServiceViewModel @Inject constructor() : ViewModel(), DefaultLifecycleObserver {
 
     private val _demoPersistentServiceUiState: MutableStateFlow<DemoPersistentServiceUiState> =
-        MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
+        MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isRunning()) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
     val demoPersistentServiceUiState: StateFlow<DemoPersistentServiceUiState> =
         _demoPersistentServiceUiState.asStateFlow()
 
@@ -30,7 +30,7 @@ class DemoPersistentServiceViewModel @Inject constructor() : ViewModel(), Defaul
         super.onStart(owner)
         _demoPersistentServiceUiState.update { currentStatus ->
             currentStatus.copy(
-                uiState = if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START,
+                uiState = if (PersistentService.isRunning()) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START,
                 log = null
             )
         }
