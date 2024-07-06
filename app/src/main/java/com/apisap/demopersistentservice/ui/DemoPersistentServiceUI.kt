@@ -100,6 +100,7 @@ fun Modifier.DemoPersistentServiceUI(
 fun ExplainPostNotificationPermissionDialog(
     onConfirmation: () -> Unit,
     onDismissRequest: () -> Unit,
+    confirmActionName: String,
 ) {
     AlertDialog(
         title = {
@@ -108,23 +109,17 @@ fun ExplainPostNotificationPermissionDialog(
         text = {
             Text(text = stringResource(R.string.post_notification_permission_explain_text_user))
         },
-        onDismissRequest = {
-            onDismissRequest()
-        },
+        onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(
-                onClick = {
-                    onConfirmation()
-                }
+                onClick = onConfirmation
             ) {
-                Text(stringResource(R.string.text_confirm))
+                Text(confirmActionName)
             }
         },
         dismissButton = {
             TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
+                onClick = onDismissRequest
             ) {
                 Text(stringResource(R.string.text_dismiss))
             }
@@ -139,5 +134,10 @@ fun DemoPersistentServicePreview() {
         Modifier.padding(
             start = 0.0.dp, top = 23.466667.dp, end = 0.0.dp, bottom = 14.933333.dp
         ).DemoPersistentServiceUI(uiStatus = DemoPersistentServiceUiStatesEnum.START, onClickBtnStartStop = { })
+        ExplainPostNotificationPermissionDialog(
+            onConfirmation = { },
+            onDismissRequest = { },
+            confirmActionName = stringResource(id = R.string.text_request_again)
+        )
     }
 }

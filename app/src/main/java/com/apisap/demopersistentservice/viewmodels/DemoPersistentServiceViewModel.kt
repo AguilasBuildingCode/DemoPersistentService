@@ -48,7 +48,7 @@ class DemoPersistentServiceViewModel @Inject constructor() : ViewModel(), Defaul
         }
     }
 
-    fun showDemoPersistentServicePostNotificationDialog(onConfirmation: () -> Unit) {
+    fun showDemoPersistentServicePostNotificationDialog(confirmActionName: String, onConfirmation: () -> Unit) {
         _demoPersistentServiceUiState.update { currentState ->
             currentState.copy(
                 log = null,
@@ -58,7 +58,8 @@ class DemoPersistentServiceViewModel @Inject constructor() : ViewModel(), Defaul
                        onConfirmation()
                         dismissPostNotificationDialogState()
                     },
-                    onDismissRequest = dismissPostNotificationDialogState
+                    onDismissRequest = dismissPostNotificationDialogState,
+                    confirmActionName = confirmActionName
                 )
             )
         }
