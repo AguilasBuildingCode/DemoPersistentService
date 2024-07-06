@@ -9,7 +9,9 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 open class PersistentServerPermissions @Inject constructor() : BasePermissions() {
 
     private var onRequireUserExplanationCallback: ((permission: String, continueRequest: () -> Unit) -> Unit)? =
@@ -146,5 +148,13 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
         }
 
         return getPermissionStatus()
+    }
+
+    fun requestPermissions(activity: Activity, permission: String) {
+        if (currentPermissions.containsKey(permission)) {
+            activity.requestPermissions(arrayOf(permission), requestCode)
+            return
+        }
+        throw IllegalArgumentException("Permission '$permission' unknown")
     }
 }

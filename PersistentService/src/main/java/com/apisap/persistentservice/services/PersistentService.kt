@@ -56,7 +56,7 @@ abstract class PersistentService : Service() {
         return PendingIntent.getService(this, 0, startIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    protected inline fun <reified A : PersistentServiceActivity> getPersistentServiceActivityOpenPendingIntent(): PendingIntent {
+    protected inline fun <reified A : PersistentServiceActivity<*>> getPersistentServiceActivityOpenPendingIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this,
             0,

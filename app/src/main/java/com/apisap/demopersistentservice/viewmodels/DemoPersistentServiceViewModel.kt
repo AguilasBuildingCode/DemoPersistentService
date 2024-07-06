@@ -1,19 +1,16 @@
 package com.apisap.demopersistentservice.viewmodels
 
-import android.Manifest
-import android.app.Activity
-import android.content.ComponentName
-import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.apisap.demopersistentservice.services.DemoPersistentService
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServicePostNotificationDialogState
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiState
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesEnum
 import com.apisap.persistentservice.services.PersistentService
-import com.apisap.persistentservice.services.PersistentServiceConnection
-import com.apisap.persistentservice.viewmodels.PersistentServiceViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,8 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DemoPersistentServiceViewModel @Inject constructor() :
-    PersistentServiceViewModel<DemoPersistentService>() {
+class DemoPersistentServiceViewModel @Inject constructor() : ViewModel(), DefaultLifecycleObserver {
 
     private val _demoPersistentServiceUiState: MutableStateFlow<DemoPersistentServiceUiState> =
         MutableStateFlow(DemoPersistentServiceUiState(if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START))
@@ -33,81 +29,54 @@ class DemoPersistentServiceViewModel @Inject constructor() :
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
         _demoPersistentServiceUiState.update { currentStatus ->
-            currentStatus.copy(uiState = if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START)
-        }
-    }
-
-    private val dismissPostNotificationDialogState: () -> Unit = {
-        _demoPersistentServiceUiState.update { currentState ->
-            currentState.copy(
-                showPostNotificationExplainUserDialog = false,
-                demoPersistentServicePostNotificationDialogState = null
+            currentStatus.copy(
+                uiState = if (PersistentService.isServiceRunning) DemoPersistentServiceUiStatesEnum.STOP else DemoPersistentServiceUiStatesEnum.START,
+                log = null
             )
         }
     }
 
-    private val onRequireUserExplanationCallback =
-        { permission: String, continueRequest: () -> Unit ->
-            when (permission) {
-                Manifest.permission.POST_NOTIFICATIONS -> {
-                    _demoPersistentServiceUiState.update { currentState ->
-                        currentState.copy(
-                            showPostNotificationExplainUserDialog = true,
-                            demoPersistentServicePostNotificationDialogState = DemoPersistentServicePostNotificationDialogState(
-                                onConfirmation = {
-                                    continueRequest()
-                                    dismissPostNotificationDialogState()
-                                },
-                                onDismissRequest = dismissPostNotificationDialogState
-                            )
-                        )
-                    }
-                }
-            }
-        }
-
-    override val persistentServiceConnection: PersistentServiceConnection<DemoPersistentService> =
-        object :
-            PersistentServiceConnection<DemoPersistentService>() {
-            override fun onPersistentServiceConnected(
-                name: ComponentName?,
-                persistentService: DemoPersistentService?
-            ) {
-                persistentService?.onNewLog { log ->
-                    _demoPersistentServiceUiState.update { currentState ->
-                        currentState.copy(log = log)
-                    }
-                }
-                persistentService?.onStoppedService {
-                    _demoPersistentServiceUiState.update { currentState ->
-                        currentState.copy(btnStartStopEnabled = false)
-                    }
-                    _demoPersistentServiceUiState.update { currentState ->
-                        currentState.copy(
-                            uiState = DemoPersistentServiceUiStatesEnum.START,
-                            btnStartStopEnabled = true,
-                            log = null
-                        )
-                    }
-                }
-                Log.i("DemoService", "onPersistentServiceConnected")
-            }
-
-            override fun onServiceDisconnected(name: ComponentName?) {
-                Log.i("DemoService", "onServiceDisconnected")
-            }
-
-        }
-
-    fun onBtnStartStopClick(activity: Activity) {
+    val dismissPostNotificationDialogState: () -> Unit = {
         viewModelScope.launch {
             _demoPersistentServiceUiState.update { currentState ->
-                currentState.copy(btnStartStopEnabled = false)
+                currentState.copy(
+                    log = null,
+                    showPostNotificationExplainUserDialog = false,
+                    demoPersistentServicePostNotificationDialogState = null
+                )
             }
+        }
+    }
+
+    fun showDemoPersistentServicePostNotificationDialog(onConfirmation: () -> Unit) {
+        _demoPersistentServiceUiState.update { currentState ->
+            currentState.copy(
+                log = null,
+                showPostNotificationExplainUserDialog = true,
+                demoPersistentServicePostNotificationDialogState = DemoPersistentServicePostNotificationDialogState(
+                    onConfirmation = {
+                       onConfirmation()
+                        dismissPostNotificationDialogState()
+                    },
+                    onDismissRequest = dismissPostNotificationDialogState
+                )
+            )
+        }
+    }
+
+    fun startTransitionBtnStartStopState(): Deferred<Unit> {
+        return viewModelScope.async {
+            _demoPersistentServiceUiState.update { currentState ->
+                currentState.copy(btnStartStopEnabled = false, log = null)
+            }
+        }
+    }
+
+    fun stopTransitionBtnStartStopState(): Deferred<Unit> {
+        return viewModelScope.async {
             _demoPersistentServiceUiState.update { currentState ->
                 when (currentState.uiState) {
                     DemoPersistentServiceUiStatesEnum.START -> {
-                        startPersistentServiceAndBind<DemoPersistentService>(activity)
                         currentState.copy(
                             uiState = DemoPersistentServiceUiStatesEnum.STOP,
                             btnStartStopEnabled = true,
@@ -116,28 +85,30 @@ class DemoPersistentServiceViewModel @Inject constructor() :
                     }
 
                     DemoPersistentServiceUiStatesEnum.STOP -> {
-                        stopPersistentServiceAndUnbind<DemoPersistentService>(activity)
-                        currentState
+                        currentState.copy(log = null)
                     }
                 }
             }
         }
     }
 
-    fun getRequireUserExplanationCallback(): (String, () -> Unit) -> Unit {
-        return onRequireUserExplanationCallback
-    }
-
-
-    fun bindOnStart(activity: Activity) {
-        if (PersistentService.isServiceRunning) {
-            startPersistentServiceAndBind<DemoPersistentService>(activity)
+    fun addNewLog(log: String) {
+        viewModelScope.launch {
+            _demoPersistentServiceUiState.update { currentState ->
+                currentState.copy(log = log)
+            }
         }
     }
 
-    fun bindOnStop(activity: Activity) {
-        if (PersistentService.isServiceRunning) {
-            startPersistentServiceForegroundAndUnbind<DemoPersistentService>(activity)
+    fun stoppedDemoPersistentService() {
+        viewModelScope.launch {
+            _demoPersistentServiceUiState.update { currentState ->
+                currentState.copy(
+                    uiState = DemoPersistentServiceUiStatesEnum.START,
+                    btnStartStopEnabled = true,
+                    log = null
+                )
+            }
         }
     }
 }

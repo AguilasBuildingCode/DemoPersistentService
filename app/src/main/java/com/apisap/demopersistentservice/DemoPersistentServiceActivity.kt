@@ -1,55 +1,56 @@
 package com.apisap.demopersistentservice
 
+import android.Manifest
+import android.content.ComponentName
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShapeDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.apisap.demopersistentservice.services.DemoPersistentService
+import com.apisap.demopersistentservice.ui.DemoPersistentServiceUI
+import com.apisap.demopersistentservice.ui.ExplainPostNotificationPermissionDialog
+import com.apisap.demopersistentservice.ui.states.DemoPersistentServicePostNotificationDialogState
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesEnum
 import com.apisap.demopersistentservice.ui.theme.DemoPersistentServiceTheme
 import com.apisap.demopersistentservice.viewmodels.DemoPersistentServiceViewModel
 import com.apisap.persistentservice.activities.PersistentServiceActivity
+import com.apisap.persistentservice.permissions.BasePermissions
+import com.apisap.persistentservice.services.PersistentServiceConnection
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class DemoPersistentServiceActivity : PersistentServiceActivity() {
+class DemoPersistentServiceActivity :
+    PersistentServiceActivity<DemoPersistentService>(clazz = DemoPersistentService::class.java) {
 
     private val viewModel by viewModels<DemoPersistentServiceViewModel>()
+    override val persistentServiceConnection: PersistentServiceConnection<DemoPersistentService> =
+        object :
+            PersistentServiceConnection<DemoPersistentService>() {
+            override fun onPersistentServiceConnected(
+                name: ComponentName?,
+                persistentService: DemoPersistentService?
+            ) {
+                persistentService?.onNewLog { log ->
+                    viewModel.addNewLog(log)
+                }
+
+                persistentService?.onStoppedService {
+                    viewModel.stoppedDemoPersistentService()
+                }
+            }
+
+            override fun onServiceDisconnected(p0: ComponentName?) {}
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,8 +62,29 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
                     setContent {
                         DemoPersistentServiceTheme {
                             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                                Modifier.padding(innerPadding).Greeting(
+                                Modifier.padding(innerPadding).DemoPersistentServiceUI(
                                     uiStatus = uiStatus,
+                                    onClickBtnStartStop = {
+                                        lifecycleScope.launch {
+                                            when (viewModel.demoPersistentServiceUiState.value.uiState) {
+                                                DemoPersistentServiceUiStatesEnum.START -> {
+                                                    viewModel.startTransitionBtnStartStopState()
+                                                        .await()
+                                                    startPersistentServiceAndBind()
+                                                    viewModel.stopTransitionBtnStartStopState()
+                                                        .await()
+                                                }
+
+                                                DemoPersistentServiceUiStatesEnum.STOP -> {
+                                                    viewModel.startTransitionBtnStartStopState()
+                                                        .await()
+                                                    stopPersistentServiceAndUnbind()
+                                                    viewModel.stopTransitionBtnStartStopState()
+                                                        .await()
+                                                }
+                                            }
+                                        }
+                                    },
                                     btnEnabled = btnEnabled,
                                     log = log
                                 )
@@ -78,122 +100,23 @@ class DemoPersistentServiceActivity : PersistentServiceActivity() {
                 }
             }
         }
-        persistentServerPermissions.setRequireUserExplanationCallback(viewModel.getRequireUserExplanationCallback())
-    }
-
-    override fun onStart() {
-        super.onStart()
-        viewModel.bindOnStart(this)
-        persistentServerPermissions.requestPermissions(this)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        viewModel.bindOnStop(this)
-    }
-
-    @Composable
-    fun Modifier.Greeting(
-        uiStatus: DemoPersistentServiceUiStatesEnum,
-        btnEnabled: Boolean = true,
-        log: String? = null,
-    ) {
-
-        val logs = remember {
-            mutableListOf<String>()
-        }
-
-        log?.let {
-            logs.add(it)
-        }
-
-        Column(
-            modifier = fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row(modifier = padding(16.dp)) {
-                Text(
-                    textAlign = TextAlign.Center,
-                    fontSize = 4.em,
-                    modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(id = R.string.app_name)
-                )
-            }
-            Row(modifier = Modifier.padding(8.dp)) {
-                Button(modifier = Modifier.fillMaxWidth(), enabled = btnEnabled, onClick = {
-                    viewModel.onBtnStartStopClick(this@DemoPersistentServiceActivity)
-                }) {
-                    Text(text = stringResource(id = if (uiStatus == DemoPersistentServiceUiStatesEnum.START) R.string.text_start else R.string.text_stop))
-                }
-            }
-            Row(modifier = Modifier.padding(8.dp)) {
-                Surface(
-                    color = Color.Black,
-                    modifier = Modifier.fillMaxSize(),
-                    shape = ShapeDefaults.Small
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .wrapContentHeight(Alignment.Bottom)
-                            .verticalScroll(rememberScrollState(), reverseScrolling = true)
-                            .padding(8.dp),
-                        text = logs.joinToString(separator = "\n"),
-                        style = TextStyle(
-                            color = Color.Green,
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 12.sp,
-                            letterSpacing = TextUnit(0.5F, TextUnitType.Sp)
-                        )
-                    )
+        persistentServerPermissions.setRequireUserExplanationCallback { permission, continueRequest ->
+            when (permission) {
+                Manifest.permission.POST_NOTIFICATIONS -> {
+                    viewModel.showDemoPersistentServicePostNotificationDialog(onConfirmation = continueRequest)
                 }
             }
         }
-    }
-
-    @Composable
-    fun ExplainPostNotificationPermissionDialog(
-        onConfirmation: () -> Unit,
-        onDismissRequest: () -> Unit,
-    ) {
-        AlertDialog(
-            title = {
-                Text(text = getString(R.string.post_notification_permission_explain_title_user))
-            },
-            text = {
-                Text(text = getString(R.string.post_notification_permission_explain_text_user))
-            },
-            onDismissRequest = {
-                onDismissRequest()
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onConfirmation()
+        persistentServerPermissions.setPermissionsChangedStatusCallback { permission, newRequestStatus ->
+            when (permission) {
+                Manifest.permission.POST_NOTIFICATIONS -> {
+                    if (newRequestStatus == BasePermissions.RequestStatus.DENIED) {
+                        viewModel.showDemoPersistentServicePostNotificationDialog {
+                            persistentServerPermissions.requestPermissions(this, permission)
+                        }
                     }
-                ) {
-                    Text(getString(R.string.text_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        onDismissRequest()
-                    }
-                ) {
-                    Text(getString(R.string.text_dismiss))
                 }
             }
-        )
-    }
-
-    @Preview(showBackground = true)
-    @Composable
-    fun GreetingPreview() {
-        DemoPersistentServiceTheme {
-            Modifier.padding(
-                start = 0.0.dp, top = 23.466667.dp, end = 0.0.dp, bottom = 14.933333.dp
-            ).Greeting(uiStatus = DemoPersistentServiceUiStatesEnum.START)
         }
     }
 }
