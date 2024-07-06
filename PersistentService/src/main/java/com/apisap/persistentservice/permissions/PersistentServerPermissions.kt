@@ -9,16 +9,58 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.apisap.persistentservice.R
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-open class PersistentServerPermissions @Inject constructor() : BasePermissions() {
+open class PersistentServerPermissions protected constructor() :
+    BasePermissions() {
+
+    companion object {
+        private val instance: PersistentServerPermissions = PersistentServerPermissions()
+        fun getInstance(): PersistentServerPermissions {
+            return instance
+        }
+    }
 
     private var onRequireUserExplanationCallback: ((permission: String, continueRequest: () -> Unit) -> Unit)? =
         null
     private var onPermissionsChangedStatusCallback: ((permission: String, newRequestStatus: RequestStatus) -> Unit)? =
         null
+
+    @SuppressLint("InlinedApi")
+    protected var persistentServicePermissions: MutableMap<String, PersistentServicePermissionStatus> =
+        hashMapOf(
+            Pair(
+                Manifest.permission.POST_NOTIFICATIONS,
+                PersistentServicePermissionStatus(
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.TIRAMISU,
+                    unsupportedPermission = RequestStatus.NOT_REQUIRED,
+                )
+            ),
+            Pair(
+                Manifest.permission.FOREGROUND_SERVICE,
+                PersistentServicePermissionStatus(
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.P,
+                    unsupportedPermission = RequestStatus.NOT_SUPPORTED,
+                )
+            ),
+            Pair(
+                Manifest.permission.FOREGROUND_SERVICE_SPECIAL_USE,
+                PersistentServicePermissionStatus(
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+                    unsupportedPermission = RequestStatus.NOT_SUPPORTED,
+                )
+            ),
+        )
+
+    protected fun addPermissions(newPermissions: MutableMap<String, PersistentServicePermissionStatus>) {
+        persistentServicePermissions =
+            persistentServicePermissions.plus(newPermissions).toMutableMap()
+    }
 
     fun setRequireUserExplanationCallback(onRequireUserExplanationCallback: (permission: String, continueRequest: () -> Unit) -> Unit) {
         this.onRequireUserExplanationCallback = onRequireUserExplanationCallback
@@ -28,39 +70,7 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
         this.onPermissionsChangedStatusCallback = onPermissionsChangedStatusCallback
     }
 
-    @SuppressLint("InlinedApi")
-    protected open val currentPermissions: HashMap<String, PersistentServicePermissionStatus> =
-        hashMapOf(
-            Pair(
-                Manifest.permission.POST_NOTIFICATIONS,
-                PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.TIRAMISU,
-                    RequestStatus.NOT_REQUIRED,
-                )
-            ),
-            Pair(
-                Manifest.permission.FOREGROUND_SERVICE,
-                PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.P,
-                    RequestStatus.NOT_SUPPORTED,
-                )
-            ),
-            Pair(
-                Manifest.permission.FOREGROUND_SERVICE_SPECIAL_USE,
-                PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-                    RequestStatus.NOT_SUPPORTED,
-                )
-            ),
-        )
-
-    fun bindRequestPermissionsResult(
+    open fun bindRequestPermissionsResult(
         requestCode: Int,
         permissions: List<String>,
         grantResults: IntArray,
@@ -72,16 +82,16 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
             val requestStatus =
                 if (grantResults[index] == PackageManager.PERMISSION_GRANTED) RequestStatus.GRANTED else RequestStatus.DENIED
 
-            currentPermissions[permission]?.permissionStatus = PermissionStatus.REQUESTED
-            currentPermissions[permission]?.requestStatus = requestStatus
+            persistentServicePermissions[permission]?.permissionStatus = PermissionStatus.REQUESTED
+            persistentServicePermissions[permission]?.requestStatus = requestStatus
 
             onPermissionsChangedStatusCallback?.let { it(permission, requestStatus) }
         }
     }
 
-    fun requestPermissions(activity: Activity) {
+    open fun requestPermissions(activity: Activity) {
         val permissionsPending = mutableListOf<String>()
-        currentPermissions.entries.forEachIndexed { index, (permission, permissionPayload) ->
+        persistentServicePermissions.entries.forEachIndexed { index, (permission, permissionPayload) ->
             if (permissionPayload.permissionStatus != PermissionStatus.PENDING) {
                 return
             }
@@ -113,18 +123,18 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
                     }
                 }
             }
-            if (index == currentPermissions.size - 1 && permissionsPending.size > 0) {
+            if (index == persistentServicePermissions.size - 1 && permissionsPending.size > 0) {
                 activity.requestPermissions(permissionsPending.toTypedArray(), requestCode)
             }
         }
     }
 
     private fun getPermissionStatus(): Map<String, RequestStatus> {
-        return currentPermissions.mapValues { (_, value) -> value.requestStatus }
+        return persistentServicePermissions.mapValues { (_, value) -> value.requestStatus }
     }
 
-    fun checkPermissionsStatus(context: Context): Map<String, RequestStatus> {
-        for ((permission, status) in currentPermissions.entries) {
+    open fun checkPermissionsStatus(context: Context): Map<String, RequestStatus> {
+        for ((permission, status) in persistentServicePermissions.entries) {
             val (_, _, minimumAPILevel, unsupportedPermission) = status
 
             when {
@@ -151,11 +161,16 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
         return getPermissionStatus()
     }
 
-    fun requestPermissions(activity: Activity, permission: String) {
-        if (currentPermissions.containsKey(permission)) {
+    open fun requestPermissions(activity: Activity, permission: String) {
+        if (persistentServicePermissions.containsKey(permission)) {
             activity.requestPermissions(arrayOf(permission), requestCode)
             return
         }
-        throw IllegalArgumentException(activity.resources.getString(R.string.illegal_argument_exception_on_persistent_server_permissions, permission))
+        throw IllegalArgumentException(
+            activity.resources.getString(
+                R.string.illegal_argument_exception_on_persistent_server_permissions,
+                permission
+            )
+        )
     }
 }

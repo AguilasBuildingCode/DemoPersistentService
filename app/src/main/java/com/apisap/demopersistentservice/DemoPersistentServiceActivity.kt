@@ -25,6 +25,7 @@ import com.apisap.demopersistentservice.viewmodels.DemoPersistentServiceViewMode
 import com.apisap.persistentservice.activities.PersistentServiceActivity
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus
+import com.apisap.persistentservice.permissions.PersistentServerPermissions
 import com.apisap.persistentservice.services.PersistentServiceConnection
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -33,7 +34,10 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class DemoPersistentServiceActivity :
-    PersistentServiceActivity<DemoPersistentService>(clazz = DemoPersistentService::class.java) {
+    PersistentServiceActivity<DemoPersistentService, PersistentServerPermissions>(clazz = DemoPersistentService::class.java) {
+
+    override val persistentServerPermissions: PersistentServerPermissions =
+        PersistentServerPermissions.getInstance()
 
     private val viewModel by viewModels<DemoPersistentServiceViewModel>()
     override val persistentServiceConnection: PersistentServiceConnection<DemoPersistentService> =

@@ -15,10 +15,7 @@ import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus.Companion.arePermissionsOK
 import com.apisap.persistentservice.permissions.PersistentServerPermissions
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
-@AndroidEntryPoint
 abstract class PersistentService : Service() {
     companion object {
         var isBound: Boolean = false
@@ -26,8 +23,8 @@ abstract class PersistentService : Service() {
         var isServiceForeground: Boolean = false
     }
 
-    @Inject
-    lateinit var persistentServerPermissions: PersistentServerPermissions
+    private val persistentServerPermissions: PersistentServerPermissions =
+        PersistentServerPermissions.getInstance()
 
     private var stoppedServiceCallback: (() -> Unit)? = null
     private var binder: PersistentServiceBinder<PersistentService>? = null
@@ -56,7 +53,7 @@ abstract class PersistentService : Service() {
         return PendingIntent.getService(this, 0, startIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    protected inline fun <reified A : PersistentServiceActivity<*>> getPersistentServiceActivityOpenPendingIntent(): PendingIntent {
+    protected inline fun <reified A : PersistentServiceActivity<*, *>> getPersistentServiceActivityOpenPendingIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this,
             0,

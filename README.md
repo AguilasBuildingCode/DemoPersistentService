@@ -24,7 +24,7 @@ are [foreground services](https://developer.android.com/develop/background-work/
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask"
-            android:taskAffinity="">
+            android:taskAffinity="YOUR_APPLICATION_ID">
             [...]
     </activity>
         <!--Service who estend of PersistentService-->
@@ -47,12 +47,28 @@ with special use.
 This new service only provide the necessary to make it persistent, only override the required and add your own logic.
 
 ### Activity who extend of [PersistentServiceActivity](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/activities/PersistentServiceActivity.kt) (see a [demo](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/app/src/main/java/com/apisap/demopersistentservice/DemoPersistentServiceActivity.kt))
-This Activity provide ViewModel to bind UI with logic, define when the lifecycles bind or unbind your service (__*onStart*__ and __*onStop*__ 
-or ~~__*onCreate*__~~ and ~~__*onDestroy*__~~, __*last ones aren't recommended*__), also this activity request the necessary permissions 
-automatically.
+This Activity provide an instance of [PersistentServerPermissions](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/permissions/PersistentServerPermissions.kt), help to handle service [ServiceConnection](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/services/PersistentServiceConnection.kt), 
+start, bind, unbind and/or stop your service automatically if your service is already running, also give you the 
+functions to start or stop your service by own criteria.
 
-### ViewModel who extend of [PersistentServiceViewModel](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/viewmodels/PersistentServiceViewModel.kt) (see a [demo](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/app/src/main/java/com/apisap/demopersistentservice/viewmodels/DemoPersistentServiceViewModel.kt)) and used by Activity who handle the persistent service.
-This ViewModel is the bridge to join UI with your logic (there are service logic to handle start, stop, bind and unbind).
+| Method                                    | Functionality                                                    | Do automatically |
+|-------------------------------------------|------------------------------------------------------------------|------------------|
+| startPersistentServiceForegroundAndUnbind | Start the service in foreground mode and unbind at onStop cycle. | Yes              |
+| startPersistentServiceAndBind             | Start the service without foreground and bind at onStart cycle.  | Yes              |
+| stopPersistentServiceAndUnbind            | Stop and unbind service (own criteria).                          | No               |
+
+Also, this activity request permissions automatically at __*onStart*__ cycle.
+
+#### How to add new Permissions?
+If you need to add new permissions and request they at same time, you can extend of [PersistentServerPermissions](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/permissions/PersistentServerPermissions.kt) and 
+add yours new permissions in __*init*__ with __*addPermissions*__ method. Remember change type in your activity that extend of [PersistentServiceActivity](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/activities/PersistentServiceActivity.kt)
+from [PersistentServerPermissions](https://github.com/AguilasBuildingCode/DemoPersistentService/blob/main/PersistentService/src/main/java/com/apisap/persistentservice/permissions/PersistentServerPermissions.kt) to your new class.
+
+<img src="assets/permissions/Screenshot_new_permissions_01.png"  alt="assets/permissions/Screenshot_new_permissions_01.png"/>
+<img src="assets/permissions/Screenshot_new_permissions_02.png"  alt="assets/permissions/Screenshot_new_permissions_02.png"/>
+<img src="assets/permissions/Screenshot_new_permissions_03.png"  alt="assets/permissions/Screenshot_new_permissions_03.png" width="260"/>
+
+*Note: add the new permissions in your Manifest.
 
 # Simplify you project
 The main set of this project is make the foreground service more easy and clear, focusing on the service logic.
@@ -74,7 +90,10 @@ don't has applications you memory always are free.
 <img alt="Screenshot_05.jpg" src="assets/Screenshot_05.jpg" width="400" />
 
 If you want to make an application for end users and you're looking for endless service, this library isn't for you. With regular
-use the service is killed by OS.
+use, the service is killed by OS. However, the system usually up again the service, it's depend of Android version, vendor and others facts.
+
+You can use this library in end users project, but, handle your business logic very well, usually when the system kills your service, it 
+doesn't call __*onDestroy*__ cycle, and when your service get up again, it restart the lifecycle. Be careful.
 
 # Demo
 <img alt="Screenshot_01.jpg" src="assets/Screenshot_01.jpg" width="260" />

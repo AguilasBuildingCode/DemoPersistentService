@@ -1,22 +1,19 @@
 package com.apisap.persistentservice.activities
 
 import android.content.Context
-import android.content.Intent
-import android.os.Bundle
 import androidx.activity.ComponentActivity
 import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.PersistentServerPermissions
 import com.apisap.persistentservice.services.PersistentService
 import com.apisap.persistentservice.services.PersistentServiceActions
 import com.apisap.persistentservice.services.PersistentServiceConnection
-import javax.inject.Inject
 
-abstract class PersistentServiceActivity<S : PersistentService>(private val clazz: Class<S>) :
+abstract class PersistentServiceActivity<S : PersistentService, P : PersistentServerPermissions>(
+    private val clazz: Class<S>
+) :
     ComponentActivity() {
 
-    @Inject
-    lateinit var persistentServerPermissions: PersistentServerPermissions
-
+    protected abstract val persistentServerPermissions: P
     protected abstract val persistentServiceConnection: PersistentServiceConnection<S>
 
     private fun startPersistentServiceForegroundAndUnbind() {
