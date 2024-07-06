@@ -34,8 +34,6 @@ import com.apisap.demopersistentservice.R
 import com.apisap.demopersistentservice.ui.states.DemoPersistentServiceUiStatesEnum
 import com.apisap.demopersistentservice.ui.theme.DemoPersistentServiceTheme
 
-private var currentBtnState = DemoPersistentServiceUiStatesEnum.START
-
 @Composable
 fun Modifier.DemoPersistentServiceUI(
     uiStatus: DemoPersistentServiceUiStatesEnum,
@@ -66,7 +64,11 @@ fun Modifier.DemoPersistentServiceUI(
             )
         }
         Row(modifier = Modifier.padding(8.dp)) {
-            Button(modifier = Modifier.fillMaxWidth(), enabled = btnEnabled, onClick = onClickBtnStartStop) {
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = btnEnabled,
+                onClick = onClickBtnStartStop
+            ) {
                 Text(text = stringResource(id = if (uiStatus == DemoPersistentServiceUiStatesEnum.START) R.string.text_start else R.string.text_stop))
             }
         }
@@ -136,12 +138,6 @@ fun DemoPersistentServicePreview() {
     DemoPersistentServiceTheme {
         Modifier.padding(
             start = 0.0.dp, top = 23.466667.dp, end = 0.0.dp, bottom = 14.933333.dp
-        ).DemoPersistentServiceUI(uiStatus = currentBtnState, onClickBtnStartStop = {
-            val newCurrentState = when(currentBtnState) {
-                DemoPersistentServiceUiStatesEnum.START -> DemoPersistentServiceUiStatesEnum.STOP
-                DemoPersistentServiceUiStatesEnum.STOP -> DemoPersistentServiceUiStatesEnum.START
-            }
-            currentBtnState = newCurrentState
-        })
+        ).DemoPersistentServiceUI(uiStatus = DemoPersistentServiceUiStatesEnum.START, onClickBtnStartStop = { })
     }
 }

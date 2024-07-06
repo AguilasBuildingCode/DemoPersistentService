@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.apisap.persistentservice.R
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -98,7 +99,7 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
                 ) -> {
                     onRequireUserExplanationCallback?.let {
                         it(permission) {
-                            activity.requestPermissions(arrayOf(permission), requestCode)
+                            requestPermissions(activity, permission)
                         }
                     }
                 }
@@ -155,6 +156,6 @@ open class PersistentServerPermissions @Inject constructor() : BasePermissions()
             activity.requestPermissions(arrayOf(permission), requestCode)
             return
         }
-        throw IllegalArgumentException("Permission '$permission' unknown")
+        throw IllegalArgumentException(activity.resources.getString(R.string.illegal_argument_exception_on_persistent_server_permissions, permission))
     }
 }
