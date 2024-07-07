@@ -14,7 +14,7 @@ import com.apisap.persistentservice.activities.PersistentServiceActivity
 import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus.Companion.arePermissionsOK
-import com.apisap.persistentservice.permissions.PersistentServerPermissions
+import com.apisap.persistentservice.permissions.PersistentServicePermissions
 
 /**
  * This [PersistentService] extend of [Service], it's made to handle foreground logic, only extend, and override
@@ -31,7 +31,7 @@ import com.apisap.persistentservice.permissions.PersistentServerPermissions
  * @property [isServiceBound] handle in the lifecycle to expose if this service is bound or not.
  * @property [isServiceRunning] handle in the lifecycle to expose if this service is running or not.
  * @property [isServiceForeground] handle in the lifecycle to expose if this service is in foreground mode or not.
- * @property [persistentServerPermissions] this property is an instance of [PersistentServerPermissions], it allows
+ * @property [persistentServicePermissions] this property is an instance of [PersistentServicePermissions], it allows
  * get current permissions status.
  * @property [stoppedServiceCallback] this property is a callback to notify when the service is stopped, you can set it with method [onStoppedService],
  * to do it, bind your activity with the service, extend of [PersistentServiceActivity] into your Activity to handle it automatically.
@@ -70,8 +70,8 @@ abstract class PersistentService : Service() {
         }
     }
 
-    private val persistentServerPermissions: PersistentServerPermissions =
-        PersistentServerPermissions.getInstance()
+    private val persistentServicePermissions: PersistentServicePermissions =
+        PersistentServicePermissions.getInstance()
 
     private var stoppedServiceCallback: (() -> Unit)? = null
     private var binder: PersistentServiceBinder<PersistentService>? = null
@@ -209,25 +209,24 @@ abstract class PersistentService : Service() {
     }
 
     /**
-     * This method [updateNotification]
+     * This method [updateNotification] update the notification by [getNotification] method.
      *
-     * @param [notification][Notification]
      */
     @SuppressLint("MissingPermission")
-    protected fun updateNotification(notification: Notification) {
+    protected fun updateNotification() {
         if (!isForeground()) {
             return
         }
         with(NotificationManagerCompat.from(this)) {
             notify(
-                notificationId, notification
+                notificationId, getNotification()
             )
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isServiceRunning = true
-        for ((permission, status) in persistentServerPermissions.checkPermissionsStatus(this).entries) {
+        for ((permission, status) in persistentServicePermissions.checkPermissionsStatus(this).entries) {
             when (permission) {
                 Manifest.permission.POST_NOTIFICATIONS -> {
                     postNotificationPermissionRequestStatus = status

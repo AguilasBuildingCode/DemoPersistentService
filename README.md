@@ -1,4 +1,4 @@
-# DemoPersistentService (V2.0.0)
+# DemoPersistentService (V2.0.1)
 
 ## Introduction
 
@@ -55,7 +55,7 @@ functions to start or stop your service by own criteria.
 |-------------------------------------------|------------------------------------------------------------------|------------------|
 | startPersistentServiceForegroundAndUnbind | Start the service in foreground mode and unbind at onStop cycle. | Yes              |
 | startPersistentServiceAndBind             | Start the service without foreground and bind at onStart cycle.  | Yes              |
-| stopPersistentServiceAndUnbind            | Stop and unbind service (own criteria).                          | No               |
+| stopPersistentServiceAndUnbind            | Stop and unbind service (use by own criteria).                   | No               |
 
 Also, this activity request permissions automatically at __*onStart*__ cycle.
 
@@ -105,3 +105,9 @@ Samsung Galaxy M13
 Model: SM-M135M/DS
 
 <img alt="Screenshot_06.jpg" src="assets/Screenshot_06.jpg" width="400" />
+
+# Install by JitPack
+[![By JitPack](https://jitpack.io/v/AguilasBuildingCode/DemoPersistentService.svg)](https://jitpack.io/#AguilasBuildingCode/DemoPersistentService/2.0.1)
+
+# Install by binary
+[V2.0.1](https://github.com/AguilasBuildingCode/DemoPersistentService/releases/tag/2.0.1)

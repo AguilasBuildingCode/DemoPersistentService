@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import com.apisap.persistentservice.R
 
 /**
- * This class [PersistentServerPermissions] extend of [BasePermissions], and it handle the permissions necessaries to run the service as foreground mode.
+ * This class [PersistentServicePermissions] extend of [BasePermissions], and it handle the permissions necessaries to run the service as foreground mode.
  *
  * @property [onRequireUserExplanationCallback] this property is a callback, used to notify if the permissions required an
  * explanation about it use in the app.
@@ -20,12 +20,12 @@ import com.apisap.persistentservice.R
  * you can create other class that extend of it, and add more permissions in init cycle by method [addPermissions].
  *
  */
-open class PersistentServerPermissions protected constructor() :
+open class PersistentServicePermissions protected constructor() :
     BasePermissions() {
 
     companion object {
-        private val instance: PersistentServerPermissions = PersistentServerPermissions()
-        fun getInstance(): PersistentServerPermissions {
+        private val instance: PersistentServicePermissions = PersistentServicePermissions()
+        fun getInstance(): PersistentServicePermissions {
             return instance
         }
     }

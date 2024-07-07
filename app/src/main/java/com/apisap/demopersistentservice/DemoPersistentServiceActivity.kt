@@ -25,20 +25,20 @@ import com.apisap.demopersistentservice.viewmodels.DemoPersistentServiceViewMode
 import com.apisap.persistentservice.activities.PersistentServiceActivity
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus
-import com.apisap.persistentservice.permissions.PersistentServerPermissions
+import com.apisap.persistentservice.permissions.PersistentServicePermissions
 import com.apisap.persistentservice.services.PersistentServiceConnection
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class DemoPersistentServiceActivity :
-    PersistentServiceActivity<DemoPersistentService, PersistentServerPermissions>(clazz = DemoPersistentService::class.java) {
-
-    override val persistentServerPermissions: PersistentServerPermissions =
-        PersistentServerPermissions.getInstance()
+    PersistentServiceActivity<DemoPersistentService, PersistentServicePermissions>(clazz = DemoPersistentService::class.java) {
 
     private val viewModel by viewModels<DemoPersistentServiceViewModel>()
+    override val persistentServerPermissions: PersistentServicePermissions by lazy { PersistentServicePermissions.getInstance() }
+
     override val persistentServiceConnection: PersistentServiceConnection<DemoPersistentService> =
         object :
             PersistentServiceConnection<DemoPersistentService>() {
@@ -109,22 +109,17 @@ class DemoPersistentServiceActivity :
                                     uiStatus = uiStatus,
                                     onClickBtnStartStop = {
                                         lifecycleScope.launch {
+                                            viewModel.startTransitionBtnStartStopState()
+                                                .await()
+                                            delay(400)
                                             when (viewModel.demoPersistentServiceUiState.value.uiState) {
                                                 DemoPersistentServiceUiStatesEnum.START -> {
-                                                    viewModel.startTransitionBtnStartStopState()
-                                                        .await()
                                                     startPersistentServiceAndBind()
                                                     viewModel.stopTransitionBtnStartStopState()
                                                         .await()
                                                 }
 
-                                                DemoPersistentServiceUiStatesEnum.STOP -> {
-                                                    viewModel.startTransitionBtnStartStopState()
-                                                        .await()
-                                                    stopPersistentServiceAndUnbind()
-                                                    viewModel.stopTransitionBtnStartStopState()
-                                                        .await()
-                                                }
+                                                DemoPersistentServiceUiStatesEnum.STOP -> stopPersistentServiceAndUnbind()
                                             }
                                         }
                                     },
