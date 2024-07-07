@@ -53,8 +53,16 @@ abstract class PersistentService : Service() {
             return isServiceBound
         }
 
+        fun isNotBound(): Boolean {
+            return !isBound()
+        }
+
         fun isRunning(): Boolean {
             return isServiceRunning
+        }
+
+        fun isNotRunning(): Boolean {
+            return !isRunning()
         }
 
         fun isForeground(): Boolean {
