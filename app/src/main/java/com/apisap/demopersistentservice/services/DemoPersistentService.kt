@@ -33,6 +33,7 @@ class DemoPersistentService : PersistentService() {
         return super.baseNotificationBuilder()
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(resources.getString(R.string.app_name))
+            .setContentText(log)
             .setContentIntent(getPersistentServiceActivityOpenPendingIntent<DemoPersistentServiceActivity>())
             .addAction(
                 R.drawable.ic_launcher_foreground,
@@ -68,22 +69,14 @@ class DemoPersistentService : PersistentService() {
                     counter
                 )
                 logsCallback?.let { it(log) }
-                updateNotification(
-                    baseNotificationBuilder()
-                        .setContentText(log)
-                        .build()
-                )
+                updateNotification()
             }
         }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         logsCallback = null
-        updateNotification(
-            baseNotificationBuilder()
-                .setContentText(log)
-                .build()
-        )
+        updateNotification()
         return super.onUnbind(intent)
     }
 

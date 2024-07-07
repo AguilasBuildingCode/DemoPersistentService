@@ -3,7 +3,7 @@ package com.apisap.persistentservice.activities
 import android.content.Context
 import androidx.activity.ComponentActivity
 import com.apisap.persistentservice.intents.PersistentServiceIntent
-import com.apisap.persistentservice.permissions.PersistentServerPermissions
+import com.apisap.persistentservice.permissions.PersistentServicePermissions
 import com.apisap.persistentservice.services.PersistentService
 import com.apisap.persistentservice.services.PersistentServiceActions
 import com.apisap.persistentservice.services.PersistentServiceConnection
@@ -13,19 +13,19 @@ import com.apisap.persistentservice.services.PersistentServiceConnection
  * start, stop, bind and/or unbind your service, also, it request the permissions required to run service in
  * foreground mode at [onStart] cycle.
  *
- * Remember define as type parameter your [PersistentService] and your [PersistentServerPermissions], is necessary create a new
- * service that extend of [PersistentService] and for your [PersistentServerPermissions] can be the same.
+ * Remember define as type parameter your [PersistentService] and your [PersistentServicePermissions], is necessary create a new
+ * service that extend of [PersistentService] and for your [PersistentServicePermissions] can be the same.
  *
  * @param [clazz][Class] define your service class.
  *
- * @property [persistentServerPermissions][P] when [P] can be [PersistentServerPermissions] or other class
- * that extend of [PersistentServerPermissions], useful if you need add more permissions, you can define it as type parameter.
+ * @property [persistentServerPermissions][P] when [P] can be [PersistentServicePermissions] or other class
+ * that extend of [PersistentServicePermissions], useful if you need add more permissions, you can define it as type parameter.
  *
  * @property [persistentServiceConnection][PersistentServiceConnection] useful to bind with your service and get information
  * about of your logic, by default, the service is bind at [onStart] and it's unbind at [onStop] cycles.
  *
  */
-abstract class PersistentServiceActivity<S : PersistentService, P : PersistentServerPermissions>(
+abstract class PersistentServiceActivity<S : PersistentService, P : PersistentServicePermissions>(
     private val clazz: Class<S>
 ) :
     ComponentActivity() {
