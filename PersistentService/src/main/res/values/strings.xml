@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="illegal_argument_exception_on_persistent_server_permissions">Unknown permission \'%1$s\'</string>
+</resources>

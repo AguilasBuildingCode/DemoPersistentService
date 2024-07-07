@@ -8,49 +8,113 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.apisap.persistentservice.R
 
-open class PersistentServerPermissions : BasePermissions() {
+/**
+ * This class [PersistentServerPermissions] extend of [BasePermissions], and it handle the permissions necessaries to run the service as foreground mode.
+ *
+ * @property [onRequireUserExplanationCallback] this property is a callback, used to notify if the permissions required an
+ * explanation about it use in the app.
+ * @property [onPermissionsChangedStatusCallback] this property is a callback, used to notify if any permission is channing their status.
+ * @property [persistentServicePermissions][MutableMap] this Map is used to define the permissions to request, if you need add some permissions,
+ * you can create other class that extend of it, and add more permissions in init cycle by method [addPermissions].
+ *
+ */
+open class PersistentServerPermissions protected constructor() :
+    BasePermissions() {
+
     companion object {
-        private val instance = PersistentServerPermissions()
-
+        private val instance: PersistentServerPermissions = PersistentServerPermissions()
         fun getInstance(): PersistentServerPermissions {
             return instance
         }
     }
 
+    private var onRequireUserExplanationCallback: ((permission: String, continueRequest: () -> Unit) -> Unit)? =
+        null
+    private var onPermissionsChangedStatusCallback: ((permission: String, newRequestStatus: RequestStatus) -> Unit)? =
+        null
+
     @SuppressLint("InlinedApi")
-    protected open val currentPermissions: HashMap<String, PersistentServicePermissionStatus> =
+    protected var persistentServicePermissions: MutableMap<String, PersistentServicePermissionStatus> =
         hashMapOf(
             Pair(
                 Manifest.permission.POST_NOTIFICATIONS,
                 PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.TIRAMISU,
-                    RequestStatus.NOT_REQUIRED,
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.TIRAMISU,
+                    unsupportedPermission = RequestStatus.NOT_REQUIRED,
                 )
             ),
             Pair(
                 Manifest.permission.FOREGROUND_SERVICE,
                 PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.P,
-                    RequestStatus.NOT_SUPPORTED,
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.P,
+                    unsupportedPermission = RequestStatus.NOT_SUPPORTED,
                 )
             ),
             Pair(
                 Manifest.permission.FOREGROUND_SERVICE_SPECIAL_USE,
                 PersistentServicePermissionStatus(
-                    PermissionStatus.PENDING,
-                    RequestStatus.UNKNOWN,
-                    Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-                    RequestStatus.NOT_SUPPORTED,
+                    permissionStatus = PermissionStatus.PENDING,
+                    requestStatus = RequestStatus.UNKNOWN,
+                    minimumAPILevel = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+                    unsupportedPermission = RequestStatus.NOT_SUPPORTED,
                 )
             ),
         )
 
-    fun bindRequestPermissionsResult(
+    /**
+     * This method [addPermissions] is used to add new permissions in child classes.
+     *
+     * @param [newPermissions][MutableMap] this map define the new permissions to add.
+     *
+     * @return [Unit]
+     *
+     */
+    protected fun addPermissions(newPermissions: MutableMap<String, PersistentServicePermissionStatus>) {
+        persistentServicePermissions =
+            persistentServicePermissions.plus(newPermissions).toMutableMap()
+    }
+
+    /**
+     * This method [setRequireUserExplanationCallback] permit set [onRequireUserExplanationCallback].
+     *
+     * @param [onRequireUserExplanationCallback] is a callback to get notifications about permissions that required be explained to user.
+     *
+     * @return [Unit]
+     *
+     */
+    fun setRequireUserExplanationCallback(onRequireUserExplanationCallback: (permission: String, continueRequest: () -> Unit) -> Unit) {
+        this.onRequireUserExplanationCallback = onRequireUserExplanationCallback
+    }
+
+    /**
+     * This method [setPermissionsChangedStatusCallback] permit set [onRequireUserExplanationCallback].
+     *
+     * @param [onPermissionsChangedStatusCallback] is a callback to get notifications about permissions that are changing their status.
+     *
+     * @return [Unit]
+     *
+     */
+    fun setPermissionsChangedStatusCallback(onPermissionsChangedStatusCallback: (permission: String, newRequestStatus: RequestStatus) -> Unit) {
+        this.onPermissionsChangedStatusCallback = onPermissionsChangedStatusCallback
+    }
+
+    /**
+     * This method [bindRequestPermissionsResult] permit get the permissions status.
+     *
+     * @param [requestCode][Int] represent who's made the permissions request, it's defined in [BasePermissions].
+     * @param [permissions][List] is the list of permissions requested.
+     * @param [grantResults][IntArray] is the reference of the status of permissions requested.
+     *
+     * @return [Unit]
+     *
+     */
+    open fun bindRequestPermissionsResult(
         requestCode: Int,
         permissions: List<String>,
         grantResults: IntArray,
@@ -58,58 +122,85 @@ open class PersistentServerPermissions : BasePermissions() {
         if (this.requestCode != requestCode) {
             return
         }
-        permissions.forEachIndexed { i, s ->
+        permissions.forEachIndexed { index, permission ->
             val requestStatus =
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) RequestStatus.GRANTED else RequestStatus.DENIED
+                if (grantResults[index] == PackageManager.PERMISSION_GRANTED) RequestStatus.GRANTED else RequestStatus.DENIED
 
-            currentPermissions[s]?.permissionStatus = PermissionStatus.REQUESTED
-            currentPermissions[s]?.requestStatus = requestStatus
+            persistentServicePermissions[permission]?.permissionStatus = PermissionStatus.REQUESTED
+            persistentServicePermissions[permission]?.requestStatus = requestStatus
+
+            onPermissionsChangedStatusCallback?.let { it(permission, requestStatus) }
         }
     }
 
-    fun requestPermissions(activity: Activity) {
+    /**
+     * This method [requestPermissions] handle the permissions request by [requestCode] and [persistentServicePermissions].
+     *
+     * @param [activity][Activity] is the activity where the permissions are request.
+     *
+     * @return [Unit]
+     *
+     */
+    open fun requestPermissions(activity: Activity) {
         val permissionsPending = mutableListOf<String>()
-        currentPermissions.entries.forEachIndexed { index, (key, value) ->
-            if (value.permissionStatus != PermissionStatus.PENDING) {
+        persistentServicePermissions.entries.forEachIndexed { index, (permission, permissionPayload) ->
+            if (permissionPayload.permissionStatus != PermissionStatus.PENDING) {
                 return
             }
             when {
                 ContextCompat.checkSelfPermission(
                     activity,
-                    key
+                    permission
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    value.permissionStatus = PermissionStatus.REQUESTED
-                    value.requestStatus = RequestStatus.GRANTED
+                    permissionPayload.permissionStatus = PermissionStatus.REQUESTED
+                    permissionPayload.requestStatus = RequestStatus.GRANTED
                 }
 
                 ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity, key
+                    activity, permission
                 ) -> {
-                    value.permissionStatus = PermissionStatus.REQUESTED
-                    value.requestStatus = RequestStatus.NEVER
+                    onRequireUserExplanationCallback?.let {
+                        it(permission) {
+                            requestPermissions(activity, permission)
+                        }
+                    }
                 }
 
                 else -> {
-                    if (Build.VERSION.SDK_INT >= value.minimumAPILevel) {
-                        permissionsPending.add(key)
+                    if (Build.VERSION.SDK_INT >= permissionPayload.minimumAPILevel) {
+                        permissionsPending.add(permission)
                     } else {
-                        value.permissionStatus = PermissionStatus.REQUESTED
-                        value.requestStatus = value.unsupportedPermission
+                        permissionPayload.permissionStatus = PermissionStatus.REQUESTED
+                        permissionPayload.requestStatus = permissionPayload.unsupportedPermission
                     }
                 }
             }
-            if (index == currentPermissions.size - 1 && permissionsPending.size > 0) {
+            if (index == persistentServicePermissions.size - 1 && permissionsPending.size > 0) {
                 activity.requestPermissions(permissionsPending.toTypedArray(), requestCode)
             }
         }
     }
 
+    /**
+     * This method [getPermissionStatus] return the current permissions status.
+     *
+     * @return [Map] of permissions and RequestStatus
+     *
+     */
     private fun getPermissionStatus(): Map<String, RequestStatus> {
-        return currentPermissions.mapValues { (_, value) -> value.requestStatus }
+        return persistentServicePermissions.mapValues { (_, value) -> value.requestStatus }
     }
 
-    fun checkPermissionsStatus(context: Context): Map<String, RequestStatus> {
-        for ((permission, status) in currentPermissions.entries) {
+    /**
+     * This method [checkPermissionsStatus] only check the current status by system and update the [persistentServicePermissions] list.
+     *
+     * @param [context][Context] who's making the permissions check.
+     *
+     * @return [Map] of permissions and RequestStatus
+     *
+     */
+    open fun checkPermissionsStatus(context: Context): Map<String, RequestStatus> {
+        for ((permission, status) in persistentServicePermissions.entries) {
             val (_, _, minimumAPILevel, unsupportedPermission) = status
 
             when {
@@ -134,5 +225,28 @@ open class PersistentServerPermissions : BasePermissions() {
         }
 
         return getPermissionStatus()
+    }
+
+    /**
+     * This method [requestPermissions] request the permission, usually used in second request permissions at [onRequireUserExplanationCallback]
+     * and [onPermissionsChangedStatusCallback].
+     *
+     * @param [activity][Activity] who's making the permissions request.
+     * @param [permission][String] the permissions to request.
+     *
+     * @return [Unit]
+     *
+     */
+    open fun requestPermissions(activity: Activity, permission: String) {
+        if (persistentServicePermissions.containsKey(permission)) {
+            activity.requestPermissions(arrayOf(permission), requestCode)
+            return
+        }
+        throw IllegalArgumentException(
+            activity.resources.getString(
+                R.string.illegal_argument_exception_on_persistent_server_permissions,
+                permission
+            )
+        )
     }
 }

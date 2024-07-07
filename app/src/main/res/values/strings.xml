@@ -1,12 +1,16 @@
 <resources>
     <string name="app_name" translatable="false">DemoPersistentService</string>
-
     <string name="text_off">Off</string>
     <string name="text_start">Start</string>
     <string name="text_stop">Stop</string>
+    <string name="text_request_again">Request again</string>
+    <string name="text_dismiss">Dismiss</string>
+    <string name="text_open_settings">Open settings</string>
     <string name="unique_persistent_service_worker_name" translatable="false">StartPersistentServiceWorker</string>
     <string name="notification_channel_id" translatable="false">DemoNotificationChannel01Id</string>
     <string name="notification_channel_name" translatable="false">DemoNotificationChannelPersistentService</string>
     <string name="notification_channel_description">It\'s used by DemoPersistentService</string>
     <string name="notification_counter_text">Counter: %1$d</string>
+    <string name="post_notification_permission_explain_title_user">Post Notification Permission</string>
+    <string name="post_notification_permission_explain_text_user">This permission is required to run the service in the foreground, if it is not granted, when exiting the app, if the service is being executed, it will stop.</string>
 </resources>
