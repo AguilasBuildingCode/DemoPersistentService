@@ -70,7 +70,7 @@ abstract class PersistentService : Service() {
         }
     }
 
-    protected val persistentServicePermissions: PersistentServicePermissions =
+    private val persistentServicePermissions: PersistentServicePermissions =
         PersistentServicePermissions.getInstance()
 
     private var stoppedServiceCallback: (() -> Unit)? = null
