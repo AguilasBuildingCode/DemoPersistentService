@@ -192,6 +192,48 @@ open class PersistentServicePermissions protected constructor() :
     }
 
     /**
+     * This method [checkPermissionStatus] only check the current status by system and update the [persistentServicePermissions] list.
+     *
+     * @param [context][Context] who's making the permissions check.
+     * @param [permission][String] permission to check check.
+     *
+     * @return [PersistentServicePermissionStatus] of permissions and RequestStatus
+     *
+     */
+    open fun checkPermissionStatus(
+        context: Context,
+        permission: String
+    ): PersistentServicePermissionStatus {
+        if (persistentServicePermissions.containsKey(permission)) {
+            persistentServicePermissions[permission]?.let { status ->
+                val (_, _, minimumAPILevel, unsupportedPermission) = status
+
+                when {
+                    Build.VERSION.SDK_INT < minimumAPILevel -> {
+                        status.permissionStatus = PermissionStatus.REQUESTED
+                        status.requestStatus = unsupportedPermission
+                    }
+
+                    ActivityCompat.checkSelfPermission(
+                        context,
+                        permission
+                    ) == PackageManager.PERMISSION_GRANTED -> {
+                        status.permissionStatus = PermissionStatus.REQUESTED
+                        status.requestStatus = RequestStatus.GRANTED
+                    }
+
+                    else -> {
+                        status.permissionStatus = PermissionStatus.REQUESTED
+                        status.requestStatus = RequestStatus.DENIED
+                    }
+                }
+                return status
+            }
+        }
+        throw IllegalArgumentException("Unknown permission $permission")
+    }
+
+    /**
      * This method [checkPermissionsStatus] only check the current status by system and update the [persistentServicePermissions] list.
      *
      * @param [context][Context] who's making the permissions check.
