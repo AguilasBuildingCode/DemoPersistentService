@@ -110,4 +110,4 @@ Model: SM-M135M/DS
 [![By JitPack](https://jitpack.io/v/AguilasBuildingCode/DemoPersistentService.svg)](https://jitpack.io/#AguilasBuildingCode/DemoPersistentService/2.0.2)
 
 # Install by binary
-[V2.0.1](https://github.com/AguilasBuildingCode/DemoPersistentService/releases/tag/2.0.2)
+[Latest](https://github.com/AguilasBuildingCode/DemoPersistentService/releases/tag/2.0.2)
