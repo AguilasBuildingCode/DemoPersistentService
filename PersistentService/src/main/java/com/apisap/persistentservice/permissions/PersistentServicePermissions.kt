@@ -203,7 +203,7 @@ open class PersistentServicePermissions protected constructor() :
     open fun checkPermissionStatus(
         context: Context,
         permission: String
-    ): PersistentServicePermissionStatus {
+    ): PermissionStatus {
         if (persistentServicePermissions.containsKey(permission)) {
             persistentServicePermissions[permission]?.let { status ->
                 val (_, _, minimumAPILevel, unsupportedPermission) = status
@@ -227,7 +227,7 @@ open class PersistentServicePermissions protected constructor() :
                         status.requestStatus = RequestStatus.DENIED
                     }
                 }
-                return status
+                return status.permissionStatus
             }
         }
         throw IllegalArgumentException("Unknown permission $permission")
