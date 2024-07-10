@@ -1,6 +1,7 @@
 package com.apisap.persistentservice.activities
 
 import android.content.Context
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.PersistentServicePermissions
@@ -48,9 +49,7 @@ abstract class PersistentServiceActivity<S : PersistentService, P : PersistentSe
             clazz
         ).let {
             startService(it)
-            if (PersistentService.isBound()) {
-                unbindService(persistentServiceConnection)
-            }
+            unbindService(persistentServiceConnection)
         }
     }
 
@@ -68,9 +67,7 @@ abstract class PersistentServiceActivity<S : PersistentService, P : PersistentSe
             clazz
         ).let {
             startService(it)
-            if (PersistentService.isNotBound()) {
-                bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
-            }
+            bindService(it, persistentServiceConnection, Context.BIND_AUTO_CREATE)
         }
     }
 
@@ -86,12 +83,23 @@ abstract class PersistentServiceActivity<S : PersistentService, P : PersistentSe
             PersistentServiceActions.OFF,
             clazz
         ).let {
-            if (PersistentService.isRunning()) {
-                startService(it)
-            }
-            if (PersistentService.isBound()) {
-                unbindService(persistentServiceConnection)
-            }
+            startService(it)
+            unbindService(persistentServiceConnection)
+        }
+    }
+
+    /**
+     * This method [unbindPersistentService] stop and unbind service, this method is used by own criteria.
+     *
+     *  * @return [Unit]
+     *
+     */
+    protected fun unbindPersistentService() {
+        Intent(
+            this,
+            clazz
+        ).let {
+            unbindService(persistentServiceConnection)
         }
     }
 
@@ -105,6 +113,10 @@ abstract class PersistentServiceActivity<S : PersistentService, P : PersistentSe
 
     override fun onStop() {
         super.onStop()
+        if (PersistentService.isNotRunning() && PersistentService.isBound()) {
+            unbindPersistentService()
+        }
+
         if (PersistentService.isRunning()) {
             startPersistentServiceForegroundAndUnbind()
         }
