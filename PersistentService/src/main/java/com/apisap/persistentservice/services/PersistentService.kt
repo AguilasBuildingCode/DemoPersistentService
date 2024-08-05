@@ -15,6 +15,9 @@ import com.apisap.persistentservice.intents.PersistentServiceIntent
 import com.apisap.persistentservice.permissions.BasePermissions
 import com.apisap.persistentservice.permissions.BasePermissions.RequestStatus.Companion.arePermissionsOK
 import com.apisap.persistentservice.permissions.PersistentServicePermissions
+import com.apisap.persistentservice.services.PersistentService.Companion.isServiceBound
+import com.apisap.persistentservice.services.PersistentService.Companion.isServiceForeground
+import com.apisap.persistentservice.services.PersistentService.Companion.isServiceRunning
 
 /**
  * This [PersistentService] extend of [Service], it's made to handle foreground logic, only extend, and override
@@ -67,6 +70,10 @@ abstract class PersistentService : Service() {
 
         fun isForeground(): Boolean {
             return isServiceForeground
+        }
+
+        fun isNotForeground(): Boolean {
+            return !isForeground()
         }
     }
 
@@ -266,7 +273,7 @@ abstract class PersistentService : Service() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         isServiceBound = false
-        if (!isForeground()) {
+        if (isRunning() && isNotForeground()) {
             stopPersistentService()
         }
         stoppedServiceCallback = null
@@ -274,6 +281,7 @@ abstract class PersistentService : Service() {
     }
 
     override fun onDestroy() {
+        super.onDestroy()
         isServiceRunning = false
         stopForeground()
         stoppedServiceCallback?.let { it() }
