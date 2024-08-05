@@ -1,4 +1,4 @@
-# DemoPersistentService (V2.0.3)
+# DemoPersistentService (V2.0.4)
 
 ## Introduction
 
@@ -107,7 +107,7 @@ Model: SM-M135M/DS
 <img alt="Screenshot_06.jpg" src="assets/Screenshot_06.jpg" width="400" />
 
 # Install by JitPack
-[![By JitPack](https://jitpack.io/v/AguilasBuildingCode/DemoPersistentService.svg)](https://jitpack.io/#AguilasBuildingCode/DemoPersistentService/2.0.3)
+[![By JitPack](https://jitpack.io/v/AguilasBuildingCode/DemoPersistentService.svg)](https://jitpack.io/#AguilasBuildingCode/DemoPersistentService/2.0.4)
 
 # Install by binary
-[Latest](https://github.com/AguilasBuildingCode/DemoPersistentService/releases/tag/2.0.3)
+[Latest](https://github.com/AguilasBuildingCode/DemoPersistentService/releases/tag/2.0.4)
